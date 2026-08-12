@@ -1,0 +1,5 @@
+node_modules/
+*.log
+.polish.json
+findings.json
+.int-test/

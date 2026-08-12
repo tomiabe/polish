@@ -1,0 +1,20 @@
+{
+  "name": "polish",
+  "version": "0.1.0",
+  "description": "Design/usability audit CLI for UI code. Rubric-based LLM review with Rams-style scoring.",
+  "type": "module",
+  "bin": {
+    "polish": "./bin/polish.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "mcp": "node mcp-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  }
+}
