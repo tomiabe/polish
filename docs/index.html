@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en" data-color-mode="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>polish: a self-hosted design audit for UI code</title>
+<meta name="description" content="polish reviews your UI code against a layered rubric with your own LLM API key. No subscription. A 0 to 100 score with concrete fixes, as a CLI and an MCP server." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212529'/%3E%3Cpath d='M8 11l6 5-6 5' stroke='%23f8f9fa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 21h7' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@primer/css@22.3.0/dist/primer.min.css" />
+<link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+<style>
+  /* ============ polish palette (grayscale) ============ */
+  :root {
+    --p-font-sans: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --p-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --p-radius-sm: 6px;
+    --p-radius-md: 8px;
+    --p-radius-lg: 12px;
+    --p-space-1: 4px; --p-space-2: 8px; --p-space-3: 12px; --p-space-4: 16px;
+    --p-space-5: 24px; --p-space-6: 32px; --p-space-7: 48px; --p-space-8: 64px;
+    --p-sev-critical: #d92d20;
+    --p-sev-serious: #b54708;
+    --p-sev-moderate: #1570ef;
+  }
+  [data-color-mode="light"] {
+    color-scheme: light;
+    --p-canvas: #f8f9fa;
+    --p-canvas-subtle: #e9ecef;
+    --p-border: #dee2e6;
+    --p-border-strong: #ced4da;
+    --p-fg: #212529;
+    --p-fg-muted: #6c757d;
+    --p-emphasis: #212529;
+    --p-emphasis-fg: #f8f9fa;
+    --p-link: #343a40;
+    --p-focus: #495057;
+    --p-shadow: 0 1px 2px rgba(33, 37, 41, 0.06), 0 4px 12px rgba(33, 37, 41, 0.06);
+    --p-chip-bg: #e9ecef;
+    --p-sev-critical-bg: #fef3f2;
+    --p-sev-serious-bg: #fffaeb;
+    --p-sev-moderate-bg: #eff8ff;
+  }
+  [data-color-mode="dark"] {
+    color-scheme: dark;
+    --p-canvas: #212529;
+    --p-canvas-subtle: #343a40;
+    --p-border: #495057;
+    --p-border-strong: #6c757d;
+    --p-fg: #f8f9fa;
+    --p-fg-muted: #adb5bd;
+    --p-emphasis: #f8f9fa;
+    --p-emphasis-fg: #212529;
+    --p-link: #dee2e6;
+    --p-focus: #adb5bd;
+    --p-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --p-chip-bg: #495057;
+    --p-sev-critical-bg: rgba(217, 45, 32, 0.14);
+    --p-sev-serious-bg: rgba(181, 71, 8, 0.14);
+    --p-sev-moderate-bg: rgba(21, 112, 239, 0.14);
+  }
+
+  /* ============ base ============ */
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--p-font-sans);
+    background: var(--p-canvas);
+    color: var(--p-fg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-smoothing: antialiased;
+    transition: background-color 200ms ease-out, color 200ms ease-out;
+  }
+  a { color: var(--p-link); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--p-fg); }
+  :focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; border-radius: 2px; }
+  ::selection { background: var(--p-border-strong); color: var(--p-fg); }
+  code, pre, .mono { font-family: var(--p-font-mono); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .skip-link {
+    position: absolute; left: -9999px; top: 0; z-index: 100;
+    background: var(--p-emphasis); color: var(--p-emphasis-fg);
+    padding: 12px 16px; border-radius: 0 0 var(--p-radius-md) 0;
+    font-weight: 600;
+  }
+  .skip-link:focus { left: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    body, * { transition: none !important; animation: none !important; }
+  }
+
+  /* ============ nav ============ */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--p-canvas);
+    border-bottom: 1px solid var(--p-border);
+  }
+  .nav-inner { display: flex; align-items: center; gap: 24px; min-height: 60px; }
+  .brand { font-family: var(--p-font-mono); font-weight: 600; font-size: 18px; color: var(--p-fg); text-decoration: none; }
+  .brand:hover { color: var(--p-fg); }
+  .brand .cursor { color: var(--p-border-strong); }
+  .nav-links { display: flex; gap: 4px; margin-left: 8px; }
+  .nav-links a {
+    color: var(--p-fg-muted); text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 8px 12px; border-radius: var(--p-radius-sm);
+  }
+  .nav-links a:hover { color: var(--p-fg); background: var(--p-canvas-subtle); text-decoration: none; }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .theme-switch {
+    display: flex; gap: 2px; background: var(--p-canvas-subtle);
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px;
+  }
+  .theme-switch button {
+    display: flex; align-items: center; gap: 6px;
+    border: 0; background: transparent; color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
+    padding: 7px 10px; border-radius: var(--p-radius-sm); cursor: pointer;
+    min-height: 36px;
+  }
+  .theme-switch button:hover { color: var(--p-fg); }
+  .theme-switch button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .theme-switch i { font-size: 16px; }
+  .theme-switch .t-label { display: inline; }
+  .nav-burger {
+    display: none; border: 1px solid var(--p-border); background: var(--p-canvas-subtle);
+    color: var(--p-fg); border-radius: var(--p-radius-md); min-height: 40px; min-width: 40px;
+    align-items: center; justify-content: center; cursor: pointer; font-size: 18px;
+  }
+  .nav-burger[aria-expanded="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .nav-menu {
+    display: none; border-top: 1px solid var(--p-border); background: var(--p-canvas);
+    padding: 8px 24px 16px;
+  }
+  .nav-menu a {
+    display: block; padding: 12px 8px; color: var(--p-fg); text-decoration: none;
+    font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--p-border);
+  }
+  .nav-menu a:last-child { border-bottom: 0; }
+  .nav-menu.open { display: block; }
+
+  /* ============ hero ============ */
+  .hero { padding: 88px 0 72px; text-align: center; }
+  .hero h1 {
+    font-size: clamp(34px, 5.6vw, 58px); line-height: 1.12; letter-spacing: -0.02em;
+    font-weight: 700; margin: 0 auto; max-width: 840px;
+  }
+  .hero .lede {
+    max-width: 620px; margin: 24px auto 0; color: var(--p-fg-muted); font-size: 19px;
+  }
+  .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .p-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--p-font-sans); font-size: 15px; font-weight: 600;
+    padding: 0 20px; min-height: 44px; border-radius: var(--p-radius-md);
+    border: 1px solid var(--p-border); background: var(--p-canvas-subtle); color: var(--p-fg);
+    cursor: pointer; text-decoration: none;
+  }
+  .p-btn:hover { background: var(--p-border); color: var(--p-fg); text-decoration: none; }
+  .p-btn.primary { background: var(--p-emphasis); color: var(--p-emphasis-fg); border-color: var(--p-emphasis); }
+  .p-btn.primary:hover { opacity: 0.88; }
+  .stats { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat {
+    background: var(--p-canvas-subtle); border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-lg); padding: 18px 16px; text-align: left;
+  }
+  .stat i { font-size: 20px; color: var(--p-fg-muted); }
+  .stat b { display: block; font-family: var(--p-font-mono); font-size: 26px; font-weight: 600; margin-top: 8px; }
+  .stat span { font-size: 13px; color: var(--p-fg-muted); }
+
+  /* ============ sections ============ */
+  section { padding: 72px 0; }
+  section.alt { background: var(--p-canvas-subtle); border-top: 1px solid var(--p-border); border-bottom: 1px solid var(--p-border); }
+  h2 { font-size: clamp(26px, 3.4vw, 34px); letter-spacing: -0.01em; font-weight: 700; margin: 0 0 12px; }
+  .sub { color: var(--p-fg-muted); font-size: 17px; max-width: 720px; margin: 0 0 32px; }
+  .sub code, p code { background: var(--p-chip-bg); border-radius: 4px; padding: 1px 5px; font-size: 0.88em; }
+
+  /* ============ before / after ============ */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .score-card {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    padding: 24px; box-shadow: var(--p-shadow);
+  }
+  .score-card .head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+  .score-card .head i { font-size: 18px; }
+  .score-card .num { font-family: var(--p-font-mono); font-size: 54px; font-weight: 600; line-height: 1.1; margin: 12px 0 4px; }
+  .score-card.before .num { color: var(--p-sev-critical); }
+  .score-card.after .num { color: var(--p-fg); }
+  .score-card .counts { font-size: 14px; color: var(--p-fg-muted); }
+  .score-card .file { font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted); margin-top: 8px; }
+  .bar { height: 8px; border-radius: 99px; background: var(--p-border); margin-top: 16px; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 99px; }
+  .bar.before i { width: 72%; background: var(--p-sev-serious); }
+  .bar.after i { width: 78%; background: var(--p-fg); }
+  .score-note { margin-top: 14px; font-size: 13px; color: var(--p-fg-muted); }
+
+  .findings-head { font-size: 15px; font-weight: 600; margin: 28px 0 10px; }
+  .findings { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+  .findings-head + .findings { margin-top: 0; }
+  .finding {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    padding: 10px 14px; font-size: 14px; display: grid;
+    grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: baseline;
+  }
+  .finding .where { font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted); white-space: nowrap; }
+  .finding .cat { font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted); }
+  .sev {
+    font-family: var(--p-font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap;
+  }
+  .sev.critical { color: var(--p-sev-critical); background: var(--p-sev-critical-bg); }
+  .sev.serious { color: var(--p-sev-serious); background: var(--p-sev-serious-bg); }
+  .sev.moderate { color: var(--p-sev-moderate); background: var(--p-sev-moderate-bg); }
+  .verify-note {
+    margin-top: 20px; font-size: 14px; color: var(--p-fg-muted);
+    border: 1px dashed var(--p-border-strong); border-radius: var(--p-radius-md);
+    padding: 14px 16px;
+  }
+  .verify-note i { color: var(--p-fg); margin-right: 6px; }
+
+  /* ============ rubric layers ============ */
+  .layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .layer {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    padding: 24px; box-shadow: var(--p-shadow); display: flex; flex-direction: column;
+  }
+  .layer .icon {
+    width: 44px; height: 44px; border-radius: var(--p-radius-md); display: flex; align-items: center; justify-content: center;
+    background: var(--p-emphasis); color: var(--p-emphasis-fg); font-size: 22px; margin-bottom: 16px;
+  }
+  .layer h3 { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+  .layer p { font-size: 14.5px; color: var(--p-fg-muted); margin: 0 0 16px; flex-grow: 1; }
+  .layer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .layer li {
+    font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg);
+    background: var(--p-chip-bg); border-radius: 99px; padding: 3px 10px;
+  }
+
+  /* ============ scoring + simulator ============ */
+  .scoring { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel { background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg); padding: 24px; box-shadow: var(--p-shadow); }
+  .panel h3 { font-size: 16px; font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .panel h3 i { color: var(--p-fg-muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--p-border); vertical-align: middle; }
+  th { color: var(--p-fg-muted); font-weight: 500; font-size: 13px; }
+  .cap { font-family: var(--p-font-mono); font-size: 13.5px; color: var(--p-fg-muted); line-height: 1.9; margin: 0; }
+  .cap b { color: var(--p-fg); font-weight: 600; }
+
+  .sim { display: flex; flex-direction: column; gap: 18px; }
+  .sim-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .sim-row .lbl { font-size: 14px; font-weight: 500; min-width: 96px; }
+  .stepper { display: flex; align-items: center; gap: 4px; }
+  .stepper button {
+    width: 40px; height: 40px; border-radius: var(--p-radius-md); border: 1px solid var(--p-border);
+    background: var(--p-canvas-subtle); color: var(--p-fg); font-size: 18px; font-family: var(--p-font-mono);
+    cursor: pointer; line-height: 1;
+  }
+  .stepper button:hover { background: var(--p-border); }
+  .stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .stepper .val { min-width: 40px; text-align: center; font-family: var(--p-font-mono); font-size: 18px; font-weight: 600; }
+  .sim-out { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--p-border); padding-top: 18px; }
+  .sim-out .score { font-family: var(--p-font-mono); font-size: 48px; font-weight: 600; }
+  .sim-out .verdict { font-size: 14px; color: var(--p-fg-muted); }
+  .sim-reset { align-self: flex-start; }
+  .sim-reset .p-btn { min-height: 40px; font-size: 14px; }
+
+  /* ============ install ============ */
+  .steps { display: flex; flex-direction: column; gap: 20px; }
+  .step { background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg); padding: 20px 24px; box-shadow: var(--p-shadow); }
+  .step .step-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .step .step-head i { font-size: 20px; color: var(--p-fg-muted); }
+  .step h3 { font-size: 16px; font-weight: 600; margin: 0; }
+  .step .step-head .num { font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted); }
+  .step p { color: var(--p-fg-muted); font-size: 14px; margin: 10px 0 0; }
+  pre {
+    background: var(--p-canvas-subtle); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; margin: 0;
+  }
+  pre .c { color: var(--p-fg-muted); }
+  pre .g { color: var(--p-fg); }
+  .audit-note {
+    margin-top: 20px; font-size: 13px; color: var(--p-fg-muted);
+    border: 1px dashed var(--p-border-strong); border-radius: var(--p-radius-md); padding: 12px 16px;
+  }
+  .audit-note i { color: var(--p-fg); margin-right: 6px; }
+
+  /* ============ mcp ============ */
+  .mcp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .mcp-card {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    padding: 24px; box-shadow: var(--p-shadow);
+  }
+  .mcp-card .icon {
+    width: 44px; height: 44px; border-radius: var(--p-radius-md); display: flex; align-items: center; justify-content: center;
+    background: var(--p-emphasis); color: var(--p-emphasis-fg); font-size: 22px; margin-bottom: 16px;
+  }
+  .mcp-card h3 { font-family: var(--p-font-mono); font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+  .mcp-card p { font-size: 14px; color: var(--p-fg-muted); margin: 0; }
+
+  /* ============ footer ============ */
+  footer { border-top: 1px solid var(--p-border); padding: 40px 0 48px; color: var(--p-fg-muted); font-size: 13.5px; }
+  .foot { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .foot .credit { margin-left: auto; }
+  .foot a { color: var(--p-fg); }
+
+  /* ============ code diff ============ */
+  [data-color-mode="light"] {
+    --p-diff-add-bg: rgba(20, 130, 70, 0.09);
+    --p-diff-add-fg: #166534;
+    --p-diff-del-bg: rgba(200, 30, 40, 0.09);
+    --p-diff-del-fg: #b42318;
+  }
+  [data-color-mode="dark"] {
+    --p-diff-add-bg: rgba(74, 222, 128, 0.12);
+    --p-diff-add-fg: #4ade80;
+    --p-diff-del-bg: rgba(248, 113, 113, 0.12);
+    --p-diff-del-fg: #f87171;
+  }
+  .diff-block { margin-top: 32px; }
+  .diff-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .diff-head h3 { font-size: 18px; font-weight: 600; margin: 0; }
+  .diff-toggle {
+    display: flex; gap: 2px; background: var(--p-canvas-subtle);
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px; margin-left: auto;
+  }
+  .diff-toggle button {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 0; background: transparent; color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
+    padding: 7px 10px; border-radius: var(--p-radius-sm); cursor: pointer; min-height: 36px;
+  }
+  .diff-toggle button:hover { color: var(--p-fg); }
+  .diff-toggle button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .diff-toggle i { font-size: 16px; }
+  .diff-view {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    overflow-x: auto; box-shadow: var(--p-shadow);
+  }
+  .diff-view[hidden] { display: none; }
+  .split-head { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--p-border); }
+  .split-head span {
+    font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted); padding: 10px 14px;
+  }
+  .split-head span + span { border-left: 1px solid var(--p-border); }
+  .split-rows { min-width: 640px; }
+  .drow { display: grid; grid-template-columns: 3.2ch 1fr 3.2ch 1fr; }
+  .drow .ln {
+    font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted); text-align: right;
+    padding: 0 8px; user-select: none; background: var(--p-canvas-subtle);
+  }
+  .drow code {
+    font-family: var(--p-font-mono); font-size: 12.5px; padding: 1px 12px;
+    white-space: pre; display: block; overflow: visible;
+  }
+  .drow .chg-del { background: var(--p-diff-del-bg); }
+  .drow .chg-del code, .drow code.chg-del { color: var(--p-diff-del-fg); }
+  .drow .chg-add { background: var(--p-diff-add-bg); }
+  .drow .chg-add code, .drow code.chg-add { color: var(--p-diff-add-fg); }
+  .urow { display: grid; grid-template-columns: 3ch 1fr; min-width: 560px; }
+  .urow .sign {
+    font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted); text-align: center;
+    user-select: none; padding: 1px 0;
+  }
+  .urow code { font-family: var(--p-font-mono); font-size: 12.5px; padding: 1px 12px 1px 4px; white-space: pre; display: block; }
+  .urow.del { background: var(--p-diff-del-bg); }
+  .urow.del .sign { color: var(--p-diff-del-fg); }
+  .urow.del code { color: var(--p-diff-del-fg); }
+  .urow.ins { background: var(--p-diff-add-bg); }
+  .urow.ins .sign { color: var(--p-diff-add-fg); }
+  .urow.ins code { color: var(--p-diff-add-fg); }
+  .urow.hunk { display: block; background: var(--p-canvas-subtle); border-bottom: 1px solid var(--p-border); }
+  .urow.hunk code { color: var(--p-fg-muted); padding: 6px 12px; }
+  @media (max-width: 920px) {
+    .diff-toggle { margin-left: 0; }
+  }
+
+  /* ============ terminal demo ============ */
+  .alt + .alt { border-top: 0; }
+  .term {
+    background: #161a1f; border: 1px solid #2a323c; border-radius: var(--p-radius-lg);
+    box-shadow: var(--p-shadow); overflow: hidden;
+  }
+  .term-bar {
+    display: flex; align-items: center; gap: 7px; padding: 10px 14px;
+    background: #101419; border-bottom: 1px solid #232b35;
+  }
+  .term-dot { width: 11px; height: 11px; border-radius: 50%; background: #343a43; }
+  .term-title {
+    margin-left: 8px; font-family: var(--p-font-mono); font-size: 12px; color: #8b98a7;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .term-replay {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    border: 1px solid #2a323c; background: transparent; color: #adb5bd;
+    font-family: var(--p-font-sans); font-size: 12.5px; font-weight: 500;
+    padding: 6px 10px; border-radius: var(--p-radius-sm); cursor: pointer; min-height: 34px;
+  }
+  .term-replay:hover { color: #e6edf3; background: #1c232b; }
+  .term-replay i { font-size: 15px; }
+  .term-body {
+    height: 440px; overflow: hidden; padding: 12px 16px;
+    font-family: var(--p-font-mono); font-size: 12.5px; line-height: 1.65; color: #d7dee6;
+  }
+  .t-line { white-space: pre-wrap; word-break: break-word; min-height: 1.65em; }
+  .t-cmd::before { content: "$ "; color: #67e8f9; }
+  .t-cmd { color: #e6edf3; }
+  .t-b { font-weight: 600; color: #e6edf3; }
+  .t-dim { color: #8b98a7; }
+  .t-red { color: #f87171; }
+  .t-yellow { color: #fbbf24; }
+  .t-cyan { color: #67e8f9; }
+  .t-green { color: #4ade80; }
+  .cur {
+    display: inline-block; width: 7px; height: 14px; background: #8b98a7;
+    vertical-align: text-bottom; animation: t-blink 1.1s steps(2, start) infinite;
+  }
+  @keyframes t-blink { to { visibility: hidden; } }
+  @media (prefers-reduced-motion: reduce) {
+    .cur { animation: none; }
+  }
+
+  /* ============ responsive ============ */
+  @media (max-width: 920px) {
+    .nav-links { display: none; }
+    .nav-burger { display: inline-flex; }
+    .layers, .mcp-grid { grid-template-columns: 1fr; }
+    .theme-switch .t-label { display: none; }
+  }
+  @media (max-width: 760px) {
+    .compare, .scoring { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .finding { grid-template-columns: auto 1fr; }
+    .finding .where { grid-column: 2; margin-top: -6px; }
+    .table-scroll { overflow-x: auto; }
+    .hero { padding: 64px 0 56px; }
+    section { padding: 56px 0; }
+    .p-btn { width: 100%; justify-content: center; }
+    .sim-row { flex-wrap: wrap; }
+    .term-body { height: 400px; font-size: 12px; }
+    .term-title { max-width: 46vw; }
+  }
+</style>
+<script>
+  (function () {
+    var choice = localStorage.getItem("polish-theme") || "system";
+    function resolve(c) {
+      if (c !== "system") return c;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-color-mode", resolve(choice));
+    window.__polishThemeChoice = choice;
+  })();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="nav" aria-label="Primary">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">polish<span class="cursor">_</span></a>
+    <div class="nav-links">
+      <a href="#demo">Demo</a>
+      <a href="#rubric">Rubric</a>
+      <a href="#scoring">Scoring</a>
+      <a href="#install">Install</a>
+      <a href="#mcp">MCP</a>
+    </div>
+    <div class="nav-right">
+      <div class="theme-switch" role="group" aria-label="Color theme">
+        <button type="button" data-theme="light" aria-pressed="false" title="Morning (light)">
+          <i class="hgi-stroke hgi-sun-01"></i><span class="t-label">Morning</span>
+        </button>
+        <button type="button" data-theme="dark" aria-pressed="false" title="Noon (dark)">
+          <i class="hgi-stroke hgi-moon-01"></i><span class="t-label">Noon</span>
+        </button>
+        <button type="button" data-theme="system" aria-pressed="false" title="Match your system">
+          <i class="hgi-stroke hgi-sliders-horizontal"></i><span class="t-label">System</span>
+        </button>
+      </div>
+      <button class="nav-burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+        <i class="hgi-stroke hgi-menu-01" id="burger-icon"></i>
+      </button>
+    </div>
+  </div>
+  <div class="nav-menu" id="nav-menu">
+    <a href="#demo">Demo</a>
+    <a href="#rubric">Rubric</a>
+    <a href="#scoring">Scoring</a>
+    <a href="#install">Install</a>
+    <a href="#mcp">MCP</a>
+  </div>
+</nav>
+
+<main id="main">
+  <header class="hero" id="top">
+    <div class="wrap">
+      <h1>A senior design review for every pull request.<br />Run it yourself.</h1>
+      <p class="lede">
+        polish audits your UI code against a layered rubric: usability, design craft, and accessibility.
+        It returns a 0 to 100 score, severity, category, exact file and line, and a concrete fix.
+        One Node script. No subscription. No quotas.
+      </p>
+      <div class="cta">
+        <a class="p-btn primary" href="#install"><i class="hgi-stroke hgi-console"></i>Get started</a>
+        <a class="p-btn" href="#demo"><i class="hgi-stroke hgi-arrow-right-01"></i>See it run</a>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <i class="hgi-stroke hgi-layers-01"></i>
+          <b>3</b>
+          <span>rubric layers</span>
+        </div>
+        <div class="stat">
+          <i class="hgi-stroke hgi-sparkles"></i>
+          <b>110</b>
+          <span>checkable rules</span>
+        </div>
+        <div class="stat">
+          <i class="hgi-stroke hgi-cpu"></i>
+          <b>0</b>
+          <span>dependencies</span>
+        </div>
+        <div class="stat">
+          <i class="hgi-stroke hgi-infinity-01"></i>
+          <b>No cap</b>
+          <span>reviews per month</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="demo" class="alt">
+    <div class="wrap">
+      <h2>One component, before and after</h2>
+      <p class="sub">
+        The same card, reviewed by the same rubric. The before version is a realistic AI-generated component:
+        inline hex colors, a clickable <code>&lt;div&gt;</code>, a delete action with no confirmation.
+        Fix each finding and the score follows. The verdicts below are live model runs on Groq with the default
+        model, llama-3.3-70b-versatile. Scores shift with the model, so run polish on your own code.
+      </p>
+
+      <div class="compare">
+        <div class="score-card before">
+          <div class="head"><i class="hgi-stroke hgi-alert-circle"></i>Before</div>
+          <div class="num">72<span style="font-size:20px;color:var(--p-fg-muted)">/100</span></div>
+          <div class="counts">0 critical, 2 serious, 2 moderate</div>
+          <div class="file">demo/ProfileCard.before.jsx</div>
+          <div class="bar before"><i></i></div>
+          <div class="score-note">No criticals. Two serious findings cost 20 points.</div>
+        </div>
+        <div class="score-card after">
+          <div class="head"><i class="hgi-stroke hgi-checkmark-circle"></i>After</div>
+          <div class="num">78<span style="font-size:20px;color:var(--p-fg-muted)">/100</span></div>
+          <div class="counts">0 critical, 1 serious, 3 moderate</div>
+          <div class="file">demo/ProfileCard.after.jsx + demo/profile.css</div>
+          <div class="bar after"><i></i></div>
+          <div class="score-note">Reviewed with its stylesheet. One serious and three moderate residuals.</div>
+        </div>
+      </div>
+
+      <div class="findings">
+        <div class="finding">
+          <span class="sev serious">serious</span><span class="cat">[A11Y]</span>
+          <span>Non-semantic elements used for buttons. Message and Delete are divs with onClick, so they are not keyboard focusable.</span>
+          <span class="where">:14</span>
+        </div>
+        <div class="finding">
+          <span class="sev serious">serious</span><span class="cat">[H3]</span>
+          <span>Lack of confirmation for destructive action. Delete runs without confirmation.</span>
+          <span class="where">:17</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[C1]</span>
+          <span>Magic numbers used for styling. borderRadius 12 is not from the design scale.</span>
+          <span class="where">:4</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[H2]</span>
+          <span>Unfamiliar platform conventions. The icon-only button has no descriptive aria-label.</span>
+          <span class="where">:20</span>
+        </div>
+      </div>
+
+      <h3 class="findings-head">What the after review still flags</h3>
+      <div class="findings">
+        <div class="finding">
+          <span class="sev serious">serious</span><span class="cat">[A11Y]</span>
+          <span>Insufficient text contrast flagged for the bio and stats text.</span>
+          <span class="where">css:44</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[H1]</span>
+          <span>No loading state for the delete action.</span>
+          <span class="where">:25</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[H3]</span>
+          <span>Browser confirm dialog preferred over an in-app confirmation.</span>
+          <span class="where">:25</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[C2]</span>
+          <span>Color tokens used for both the primary button and the focus outline.</span>
+          <span class="where">css:73</span>
+        </div>
+      </div>
+
+      <p class="verify-note">
+        <i class="hgi-stroke hgi-shield-01"></i>
+        Then <code>polish --verify findings.json</code> re-checks each finding against the updated code,
+        at a fraction of the cost of a full re-review. Live verdicts vary between models and runs,
+        so treat any single score as a signal, not a grade.
+      </p>
+
+      <div class="diff-block">
+        <div class="diff-head">
+          <h3>See the fix in code</h3>
+          <div class="diff-toggle" role="group" aria-label="Diff view">
+            <button type="button" data-view="split" aria-pressed="true"><i class="hgi-stroke hgi-arrow-left-right"></i>Side by side</button>
+            <button type="button" data-view="unified" aria-pressed="false"><i class="hgi-stroke hgi-list-view"></i>Unified</button>
+          </div>
+        </div>
+        <div class="diff-view" id="diff-split">
+          <div class="split-head"><span>ProfileCard.before.jsx</span><span>ProfileCard.after.jsx</span></div>
+          <div class="split-rows" id="diff-rows"></div>
+        </div>
+        <div class="diff-view" id="diff-unified" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="cli" class="alt">
+    <div class="wrap">
+      <h2>Watch it run</h2>
+      <p class="sub">
+        The whole pipeline in one terminal: config, prompts, the model call, scoring, and findings with fixes.
+        Recorded from a live run against the broken card with the default model on Groq.
+      </p>
+      <div class="term" id="term">
+        <div class="term-bar">
+          <span class="term-dot" aria-hidden="true"></span>
+          <span class="term-dot" aria-hidden="true"></span>
+          <span class="term-dot" aria-hidden="true"></span>
+          <span class="term-title">polish demo/ProfileCard.before.jsx</span>
+          <button type="button" class="term-replay" id="term-replay">
+            <i class="hgi-stroke hgi-refresh" aria-hidden="true"></i>Replay
+          </button>
+        </div>
+        <div class="term-body" id="term-body" role="region" aria-label="Terminal output of polish reviewing ProfileCard.before.jsx"></div>
+      </div>
+      <p class="score-note" style="margin-top:14px">
+        Recorded live run, Groq with llama-3.3-70b-versatile. The same command runs live any time:
+        <code>polish demo/ProfileCard.before.jsx</code>.
+      </p>
+    </div>
+  </section>
+
+  <section id="rubric">
+    <div class="wrap">
+      <h2>The rubric is data. Swap it.</h2>
+      <p class="sub">
+        Three layers cover what senior designers check in code. Not screenshots, not vibes.
+        Every rule is written so a model can verify it against source, and the whole thing is plain data,
+        so you can replace it with your own design philosophy.
+      </p>
+      <div class="layers">
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-user-check-01"></i></div>
+          <h3>Usability heuristics</h3>
+          <p>How the system communicates and recovers: feedback, control, consistency, error prevention, and efficiency. Ten heuristics, H1 to H10.</p>
+          <ul>
+            <li>Status visibility</li><li>Real world match</li><li>User control</li><li>Consistency</li>
+            <li>Error prevention</li><li>Recognition</li><li>Efficiency</li><li>Minimalism</li>
+            <li>Error recovery</li><li>Help</li>
+          </ul>
+        </div>
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-sparkles"></i></div>
+          <h3>Design craft</h3>
+          <p>Design-system discipline and production polish: tokens, type, spacing, motion, components, and the words on the buttons. Seven categories, C1 to C7.</p>
+          <ul>
+            <li>Visual craft</li><li>Color and tokens</li><li>Typography</li><li>Spacing and layout</li>
+            <li>Motion</li><li>Components</li><li>Writing</li>
+          </ul>
+        </div>
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-access"></i></div>
+          <h3>Accessibility</h3>
+          <p>Checkable requirements: contrast, keyboard support, semantics, forms, touch targets, and reduced motion. One pass, A11Y.</p>
+          <ul>
+            <li>Contrast</li><li>Focus</li><li>Semantics</li><li>Forms</li><li>Touch targets</li><li>Reduced motion</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="scoring" class="alt">
+    <div class="wrap">
+      <h2>One number: is it ready to merge?</h2>
+      <p class="sub">
+        Start at 100. Each finding deducts by severity, and criticals cap the ceiling. A score of 60 or above
+        always means zero critical issues. Try it below.
+      </p>
+      <div class="scoring">
+        <div class="panel">
+          <h3><i class="hgi-stroke hgi-chart"></i>Score simulator</h3>
+          <div class="sim">
+            <div class="sim-row">
+              <span class="lbl"><span class="sev critical">critical</span></span>
+              <div class="stepper">
+                <button type="button" data-sev="critical" data-dir="-1" aria-label="Remove one critical finding">&minus;</button>
+                <span class="val" id="val-critical">0</span>
+                <button type="button" data-sev="critical" data-dir="1" aria-label="Add one critical finding">+</button>
+              </div>
+            </div>
+            <div class="sim-row">
+              <span class="lbl"><span class="sev serious">serious</span></span>
+              <div class="stepper">
+                <button type="button" data-sev="serious" data-dir="-1" aria-label="Remove one serious finding">&minus;</button>
+                <span class="val" id="val-serious">2</span>
+                <button type="button" data-sev="serious" data-dir="1" aria-label="Add one serious finding">+</button>
+              </div>
+            </div>
+            <div class="sim-row">
+              <span class="lbl"><span class="sev moderate">moderate</span></span>
+              <div class="stepper">
+                <button type="button" data-sev="moderate" data-dir="-1" aria-label="Remove one moderate finding">&minus;</button>
+                <span class="val" id="val-moderate">2</span>
+                <button type="button" data-sev="moderate" data-dir="1" aria-label="Add one moderate finding">+</button>
+              </div>
+            </div>
+            <div class="sim-out">
+              <div class="score" id="sim-score" aria-live="polite">72</div>
+              <div class="verdict" id="sim-verdict">No criticals. Only deductions apply.</div>
+            </div>
+            <div class="sim-reset">
+              <button type="button" class="p-btn" id="sim-reset">Reset to before card</button>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3><i class="hgi-stroke hgi-target-01"></i>How the score is built</h3>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th>Severity</th><th>Deduction</th><th>Example</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="sev critical">critical</span></td><td>25</td><td>Unreachable by keyboard</td></tr>
+                <tr><td><span class="sev serious">serious</span></td><td>10</td><td>Hardcoded hex, no confirmation</td></tr>
+                <tr><td><span class="sev moderate">moderate</span></td><td>4</td><td>Magic radius, <code>transition: all</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="cap" style="margin-top:16px">
+            <b>0 criticals</b> score as deducted<br />
+            <b>1 critical</b> ceiling 59<br />
+            <b>2 criticals</b> ceiling 49<br />
+            <b>3 or more</b> ceiling 39<br />
+            The score never drops below 0.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2>Install in two commands</h2>
+      <p class="sub">
+        Works with Groq, OpenAI, Anthropic, OpenRouter, or any OpenAI-compatible endpoint.
+        The core is a single Node script with zero dependencies.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-head">
+            <span class="num">01</span><i class="hgi-stroke hgi-console"></i><h3>Install</h3>
+          </div>
+          <pre><span class="c"># bash</span>
+git clone https://github.com/tomiabe/polish.git
+cd polish
+npm link</pre>
+        </div>
+        <div class="step">
+          <div class="step-head">
+            <span class="num">02</span><i class="hgi-stroke hgi-lock-key"></i><h3>Point it at a model</h3>
+          </div>
+          <pre><span class="c"># export one key</span>
+export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / OPENROUTER</span></pre>
+        </div>
+        <div class="step">
+          <div class="step-head">
+            <span class="num">03</span><i class="hgi-stroke hgi-code-circle"></i><h3>Audit your UI</h3>
+          </div>
+          <pre>polish                                   <span class="c"># audit files matched by config globs</span>
+polish src/components src/pages/*.tsx    <span class="c"># or specific files</span>
+polish --verify findings.json           <span class="c"># re-check that fixes landed</span>
+polish --json                           <span class="c"># machine-readable, for CI</span>
+polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
+          <p>Exits with code 1 when critical findings exist. Wire it into pre-commit or CI.</p>
+        </div>
+        <div class="step">
+          <div class="step-head">
+            <span class="num">04</span><i class="hgi-stroke hgi-sliders-horizontal"></i><h3>Tailor the rubric</h3>
+          </div>
+          <pre><span class="c">// .polish.json, everything optional</span>
+{
+  <span class="g">"provider"</span>: "anthropic",
+  <span class="g">"rubric"</span>: ["usability", "craft", "accessibility"],
+  <span class="g">"include"</span>: ["src/**/*.{tsx,css}"],
+  <span class="g">"maxFiles"</span>: 20
+}</pre>
+        </div>
+      </div>
+      <p class="audit-note">
+        <i class="hgi-stroke hgi-shield-01"></i>
+        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 19,500 tokens, under a cent on most models.
+      </p>
+    </div>
+  </section>
+
+  <section id="mcp" class="alt">
+    <div class="wrap">
+      <h2>Same engine, one more door: MCP</h2>
+      <p class="sub">
+        polish also runs as an MCP server over stdio. Coding agents call the exact same engine as the CLI:
+        identical prompts, identical scoring. Terminal users and AI agents can never disagree.
+      </p>
+      <div class="mcp-grid">
+        <div class="mcp-card">
+          <div class="icon"><i class="hgi-stroke hgi-bot"></i></div>
+          <h3>polish_review_files</h3>
+          <p>Review UI files by content. Returns score, counts, assessment, and findings with severity, category, file:line, and a fix.</p>
+        </div>
+        <div class="mcp-card">
+          <div class="icon"><i class="hgi-stroke hgi-checkmark-circle"></i></div>
+          <h3>polish_verify_fixes</h3>
+          <p>Re-check previous findings against updated content. Reports FIXED or STILL PRESENT per finding.</p>
+        </div>
+        <div class="mcp-card">
+          <div class="icon"><i class="hgi-stroke hgi-infinity-01"></i></div>
+          <h3>polish_usage</h3>
+          <p>Usage status: always unlimited. Self-hosted means no quota and no subscription, just your own key.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>polish is MIT licensed. Built for people who review their own UI.</span>
+    <span class="credit">Made by <a href="https://studio.tomiabe.com">tomi abe studio</a></span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    // ===== theme: morning / noon / system =====
+    var root = document.documentElement;
+    var choice = window.__polishThemeChoice || "system";
+    var media = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function applyResolved() {
+      var resolved = choice === "system" ? (media.matches ? "dark" : "light") : choice;
+      root.setAttribute("data-color-mode", resolved);
+    }
+    function syncButtons() {
+      document.querySelectorAll(".theme-switch button").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.theme === choice));
+      });
+    }
+    document.querySelectorAll(".theme-switch button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        choice = b.dataset.theme;
+        localStorage.setItem("polish-theme", choice);
+        applyResolved();
+        syncButtons();
+      });
+    });
+    media.addEventListener("change", function () {
+      if (choice === "system") applyResolved();
+    });
+    syncButtons();
+
+    // ===== mobile menu =====
+    var burger = document.querySelector(".nav-burger");
+    var menu = document.getElementById("nav-menu");
+    var burgerIcon = document.getElementById("burger-icon");
+    burger.addEventListener("click", function () {
+      var open = menu.classList.toggle("open");
+      burger.setAttribute("aria-expanded", String(open));
+      burgerIcon.className = open ? "hgi-stroke hgi-cancel-01" : "hgi-stroke hgi-menu-01";
+    });
+    menu.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () {
+        menu.classList.remove("open");
+        burger.setAttribute("aria-expanded", "false");
+        burgerIcon.className = "hgi-stroke hgi-menu-01";
+      });
+    });
+
+    // ===== score simulator =====
+    var counts = { critical: 0, serious: 2, moderate: 2 };
+    var MAX = 9;
+    var els = {
+      critical: document.getElementById("val-critical"),
+      serious: document.getElementById("val-serious"),
+      moderate: document.getElementById("val-moderate"),
+      score: document.getElementById("sim-score"),
+      verdict: document.getElementById("sim-verdict")
+    };
+
+    function compute() {
+      var raw = 100 - 25 * counts.critical - 10 * counts.serious - 4 * counts.moderate;
+      var cap = counts.critical >= 3 ? 39 : counts.critical === 2 ? 49 : counts.critical === 1 ? 59 : 100;
+      var score = Math.max(0, Math.min(raw, cap));
+      var verdict;
+      if (counts.critical === 0) verdict = "No criticals. Only deductions apply.";
+      else if (counts.critical === 1) verdict = "One critical caps the ceiling at 59.";
+      else if (counts.critical === 2) verdict = "Two criticals cap the ceiling at 49.";
+      else verdict = "Three or more criticals cap the ceiling at 39.";
+      els.score.textContent = String(score);
+      els.verdict.textContent = verdict;
+      els.score.style.color = score >= 60 ? "var(--p-fg)" : "var(--p-sev-critical)";
+    }
+
+    document.querySelectorAll(".stepper button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var sev = b.dataset.sev;
+        var next = counts[sev] + Number(b.dataset.dir);
+        if (next < 0 || next > MAX) return;
+        counts[sev] = next;
+        els[sev].textContent = String(next);
+        compute();
+      });
+    });
+    document.getElementById("sim-reset").addEventListener("click", function () {
+      counts = { critical: 0, serious: 2, moderate: 2 };
+      Object.keys(counts).forEach(function (k) { els[k].textContent = String(counts[k]); });
+      compute();
+    });
+    compute();
+
+    // ===== code diff =====
+    var BEFORE_SRC = `// ProfileCard.jsx: user profile card
+export function ProfileCard({ user, onDelete, onMessage }) {
+  return (
+    <div className="card" style={{ borderRadius: 12, background: "linear-gradient(135deg, #3B82F6, #8B5CF6)", transition: "all 200ms" }}>
+      <img src={user.avatar} />
+      <div className="card-body">
+        <h2>{user.name}</h2>
+        <p className="bio">{user.bio}</p>
+        <div className="stats">
+          <span className="stat">{user.posts} posts</span>
+          <span className="stat">{user.followers} followers</span>
+        </div>
+        <div className="actions">
+          <div className="btn primary" onClick={() => onMessage(user.id)}>
+            Message
+          </div>
+          <div className="btn danger" onClick={() => onDelete(user.id)}>
+            Delete
+          </div>
+          <button className="icon-btn">
+            <span className="icon">more</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CompactProfileCard({ user, onMessage }) {
+  return (
+    <div className="card compact">
+      <img src={user.avatar} />
+      <div className="card-body">
+        <h2>{user.name}</h2>
+        <div className="actions">
+          <div className="btn primary" onClick={() => onMessage(user.id)}>
+            Message
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}`;
+    var AFTER_SRC = `// ProfileCard.jsx: user profile card
+import "./profile.css";
+
+export function ProfileCard({ user, onDelete, onMessage, compact = false }) {
+  return (
+    <article className="card">
+      <img src={user.avatar} alt={user.name} />
+      <div className="card-body">
+        <h2>{user.name}</h2>
+        <p className="bio">{user.bio}</p>
+        {!compact && (
+          <div className="stats">
+            <span className="stat">{user.posts} posts</span>
+            <span className="stat">{user.followers} followers</span>
+          </div>
+        )}
+        <div className="actions">
+          <button className="btn primary" onClick={() => onMessage(user.id)}>
+            Message
+          </button>
+          {!compact && (
+            <button
+              className="btn danger"
+              onClick={() => {
+                if (window.confirm(\`Delete \${user.name}?\`)) onDelete(user.id);
+              }}
+            >
+              Delete
+            </button>
+          )}
+          <button className="icon-btn" aria-label="More actions">
+            <span className="icon">more</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}`;
+
+    function esc(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function computeDiff(a, b) {
+      var n = a.length, m = b.length;
+      var dp = Array.from({ length: n + 1 }, function () { return new Array(m + 1).fill(0); });
+      for (var i = n - 1; i >= 0; i--) {
+        for (var j = m - 1; j >= 0; j--) {
+          dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+      var ops = [];
+      var x = 0, y = 0;
+      while (x < n && y < m) {
+        if (a[x] === b[y]) { ops.push({ type: "equal", a: a[x], b: b[y] }); x++; y++; }
+        else if (dp[x + 1][y] >= dp[x][y + 1]) { ops.push({ type: "del", a: a[x] }); x++; }
+        else { ops.push({ type: "ins", b: b[y] }); y++; }
+      }
+      while (x < n) { ops.push({ type: "del", a: a[x] }); x++; }
+      while (y < m) { ops.push({ type: "ins", b: b[y] }); y++; }
+      return ops;
+    }
+    function mergeReplacements(ops) {
+      var out = [];
+      for (var k = 0; k < ops.length; k++) {
+        var o = ops[k];
+        if (o.type === "del" && ops[k + 1] && ops[k + 1].type === "ins") {
+          out.push({ type: "rep", a: o.a, b: ops[k + 1].b }); k++;
+        } else if (o.type === "ins" && ops[k + 1] && ops[k + 1].type === "del") {
+          out.push({ type: "rep", a: ops[k + 1].a, b: o.b }); k++;
+        } else out.push(o);
+      }
+      return out;
+    }
+
+    var beforeLines = BEFORE_SRC.split("\n");
+    var afterLines = AFTER_SRC.split("\n");
+    var ops = mergeReplacements(computeDiff(beforeLines, afterLines));
+
+    // side by side
+    var rowsEl = document.getElementById("diff-rows");
+    var splitHtml = "";
+    var na = 0, nb = 0;
+    ops.forEach(function (op) {
+      var a = op.a != null ? esc(op.a) : "";
+      var b = op.b != null ? esc(op.b) : "";
+      if (op.type === "equal") { na++; nb++; splitHtml += rowHtml(na, a, "", nb, b, ""); }
+      else if (op.type === "del") { na++; splitHtml += rowHtml(na, a, "chg-del", null, "", ""); }
+      else if (op.type === "ins") { nb++; splitHtml += rowHtml(null, "", "", nb, b, "chg-add"); }
+      else { na++; nb++; splitHtml += rowHtml(na, a, "chg-del", nb, b, "chg-add"); }
+    });
+    rowsEl.innerHTML = splitHtml;
+    function rowHtml(na, a, ca, nb, b, cb) {
+      return '<div class="drow">' +
+        '<span class="ln">' + (na != null ? na : "") + "</span>" +
+        '<code class="' + ca + '">' + a + "</code>" +
+        '<span class="ln">' + (nb != null ? nb : "") + "</span>" +
+        '<code class="' + cb + '">' + b + "</code></div>";
+    }
+
+    // unified
+    var unEl = document.getElementById("diff-unified");
+    var uhtml = '<div class="urow hunk"><code>@@ -1,' + beforeLines.length + " +1," + afterLines.length + " @@</code></div>";
+    ops.forEach(function (op) {
+      if (op.type === "equal") uhtml += urowHtml(" ", op.a, "");
+      else if (op.type === "del") uhtml += urowHtml("-", op.a, "del");
+      else if (op.type === "ins") uhtml += urowHtml("+", op.b, "ins");
+      else { uhtml += urowHtml("-", op.a, "del"); uhtml += urowHtml("+", op.b, "ins"); }
+    });
+    unEl.innerHTML = uhtml;
+    function urowHtml(sign, line, cls) {
+      return '<div class="urow ' + cls + '"><span class="sign">' + sign + "</span><code>" + esc(line) + "</code></div>";
+    }
+
+    // toggle
+    document.querySelectorAll(".diff-toggle button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        document.querySelectorAll(".diff-toggle button").forEach(function (x) {
+          x.setAttribute("aria-pressed", String(x === b));
+        });
+        var split = b.dataset.view === "split";
+        document.getElementById("diff-split").hidden = !split;
+        document.getElementById("diff-unified").hidden = split;
+      });
+    });
+
+    // ===== terminal demo =====
+    function finding(color, label, cat, title, loc, msg, fix) {
+      return ["find", { color: color, label: label, cat: cat, title: title, loc: loc, msg: msg, fix: fix }];
+    }
+    var TERM = [
+      ["cmd", "polish demo/ProfileCard.before.jsx"],
+      ["line", [["polish ", "b"], ["~3,094 estimated tokens", "dim"]], 70],
+      ["line", [["  demo/ProfileCard.before.jsx (1.3 KB)", "dim"]], 40],
+      ["line", [], 60],
+      ["line", [["Score: ", "b"], ["72/100", "yellow b"]], 180],
+      ["line", [["Critical: ", "dim"], ["0", ""], ["   Serious: ", "dim"], ["2", "yellow"], ["   Moderate: ", "dim"], ["2", "cyan"]], 130],
+      ["line", [["  A11Y: 1 finding", "dim"]], 50],
+      ["line", [["  C1: 1 finding", "dim"]], 40],
+      ["line", [["  H2: 1 finding", "dim"]], 40],
+      ["line", [["  H3: 1 finding", "dim"]], 60],
+      ["line", [], 80],
+      ["line", [["ProfileCard UI has several issues with accessibility, consistency, and design standards", "dim"]], 200],
+      ["line", [], 80],
+      finding("yellow", "SERIOUS", "A11Y", "Non-semantic elements used for buttons",
+        "demo/ProfileCard.before.jsx:14",
+        "The 'Message' and 'Delete' buttons are using non-semantic 'div' elements instead of 'button' elements.",
+        "Replace 'div' with 'button' and add a 'type' attribute: <button type=\"button\" className=\"btn primary\" onClick={() => onMessage(user.id)}>."),
+      finding("yellow", "SERIOUS", "H3", "Lack of confirmation for destructive action",
+        "demo/ProfileCard.before.jsx:17",
+        "The 'Delete' button is a destructive action that requires confirmation before execution.",
+        "Add a confirmation dialog or prompt before running the 'onDelete' callback."),
+      finding("cyan", "MODERATE", "C1", "Magic numbers used for styling",
+        "demo/ProfileCard.before.jsx:4",
+        "The 'borderRadius' style property uses a magic number (12) instead of a value from the design scale or tokens.",
+        "Replace the magic number with a value from the design scale or tokens, e.g. 'borderRadius: theme.spacing.sm'."),
+      finding("cyan", "MODERATE", "H2", "Unfamiliar platform conventions",
+        "demo/ProfileCard.before.jsx:20",
+        "The 'more' icon button does not follow familiar platform conventions for icon buttons.",
+        "Add a descriptive 'aria-label' attribute to the icon button, e.g. 'aria-label=\"More options\"'.")
+    ];
+
+    function buildSteps() {
+      var out = [];
+      TERM.forEach(function (item) {
+        var kind = item[0];
+        if (kind === "cmd") {
+          out.push({ type: "cmd", text: item[1] });
+        } else if (kind === "find") {
+          var f = item[1];
+          out.push({ type: "line", segs: [["  " + f.label + " ", "b " + f.color], ["[" + f.cat + "] ", "cyan"], [f.title, "b"]], delay: 240 });
+          out.push({ type: "line", segs: [["  " + f.loc, "dim"]], delay: 30 });
+          out.push({ type: "line", segs: [["  " + f.msg, "dim"]], delay: 30 });
+          out.push({ type: "line", segs: [["  Fix: ", "green"], [f.fix, ""]], delay: 40 });
+          out.push({ type: "line", segs: [], delay: 220 });
+        } else {
+          out.push({ type: "line", segs: item[1] || [], delay: item[2] || 60 });
+        }
+      });
+      return out;
+    }
+
+    function renderLine(el, s) {
+      (s.segs || []).forEach(function (g) {
+        var sp = document.createElement("span");
+        if (g[1]) sp.className = g[1].split(" ").map(function (c) { return "t-" + c; }).join(" ");
+        sp.textContent = g[0];
+        el.appendChild(sp);
+      });
+    }
+
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var termBody = document.getElementById("term-body");
+    var runGen = 0;
+
+    function runTerminal() {
+      var gen = ++runGen;
+      var steps = buildSteps();
+      termBody.innerHTML = "";
+      var cursor = document.createElement("span");
+      cursor.className = "cur";
+      cursor.setAttribute("aria-hidden", "true");
+      termBody.appendChild(cursor);
+      var scrollBottom = function () { if (gen === runGen) termBody.scrollTop = termBody.scrollHeight; };
+      var cursorOff = function () { if (gen === runGen) cursor.style.animation = "none"; };
+
+      if (reduceMotion) {
+        steps.forEach(function (s) {
+          var el = document.createElement("div");
+          el.className = s.type === "cmd" ? "t-line t-cmd" : "t-line";
+          if (s.type === "cmd") el.textContent = s.text;
+          else renderLine(el, s);
+          termBody.insertBefore(el, cursor);
+        });
+        scrollBottom();
+        cursorOff();
+        return;
+      }
+
+      var i = 0;
+      function next() {
+        if (gen !== runGen) return;
+        if (i >= steps.length) { scrollBottom(); return; }
+        var s = steps[i++];
+        if (s.type === "cmd") {
+          var el = document.createElement("div");
+          el.className = "t-line t-cmd";
+          termBody.insertBefore(el, cursor);
+          var k = 0;
+          (function typeChar() {
+            if (gen !== runGen) return;
+            if (k >= s.text.length) { scrollBottom(); setTimeout(next, 150); return; }
+            el.textContent += s.text.charAt(k++);
+            scrollBottom();
+            setTimeout(typeChar, 20);
+          })();
+        } else {
+          var line = document.createElement("div");
+          line.className = "t-line";
+          renderLine(line, s);
+          termBody.insertBefore(line, cursor);
+          scrollBottom();
+          setTimeout(next, s.delay);
+        }
+      }
+      next();
+    }
+
+    var termStarted = false;
+    var termEl = document.getElementById("term");
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && !termStarted) {
+            termStarted = true;
+            io.disconnect();
+            runTerminal();
+          }
+        });
+      }, { threshold: 0.25 });
+      io.observe(termEl);
+    } else {
+      termStarted = true;
+      runTerminal();
+    }
+
+    document.getElementById("term-replay").addEventListener("click", function () {
+      if (!termStarted) { termStarted = true; }
+      runTerminal();
+    });
+  })();
+</script>
+</body>
+</html>
