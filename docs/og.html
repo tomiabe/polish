@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>polish_ og</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  body[data-theme="dark"]  { background: #212529; }
+  body[data-theme="light"] { background: #f8f9fa; }
+  .mark { font-size: 132px; font-weight: 600; letter-spacing: -0.02em; user-select: none; }
+  body[data-theme="dark"] .mark  { color: #f8f9fa; }
+  body[data-theme="light"] .mark { color: #212529; }
+  .mark .us { color: #5eead4; }
+</style>
+</head>
+<body data-theme="dark">
+  <div class="mark">polish<span class="us">_</span></div>
+  <script>
+    var m = new URLSearchParams(location.search).get("theme");
+    if (m === "light" || m === "dark") document.body.dataset.theme = m;
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('600 132px "IBM Plex Mono"').then(function () {
+        document.documentElement.dataset.fontReady = String(
+          document.fonts.check('600 132px "IBM Plex Mono"')
+        );
+      });
+    }
+  </script>
+</body>
+</html>
