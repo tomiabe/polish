@@ -1,6 +1,6 @@
 # polish
 
-A self-hosted design audit tool for UI code. It reviews your components against a rubric and scores them 0-100, the way hosted design review services do, but with no subscription and your own LLM API key.
+The design review you run, not subscribe to. Landing page: [tomiabe.github.io/polish](https://tomiabe.github.io/polish/). polish audits your UI code for usability, design craft, and accessibility, and scores it 0-100 with severity, category, exact file and line, plus a concrete fix. One self-hosted Node script, your own LLM API key, no bots in your repo, no quotas.
 
 ## Why
 
@@ -8,8 +8,8 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 
 ## Features
 
-- Reviews against Nielsen's 10 usability heuristics plus an accessibility pass. The rubric is plain data, so it can be swapped for any design philosophy.
-- Rams-style scoring. Critical findings cap the ceiling: one caps at 59, two at 49, three or more at 39.
+- Reviews against a layered rubric: usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility. The rubric is plain data, so it can be swapped for any design philosophy.
+- Cap-ladder scoring. Critical findings cap the ceiling: one caps at 59, two at 49, three or more at 39.
 - Provider support for Groq, OpenAI, Anthropic, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
 - Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review.
@@ -50,8 +50,9 @@ Create `.polish.json` in a project root. Everything is optional:
 {
   "provider": "anthropic",
   "model": "claude-sonnet-4-20250514",
-  "include": ["src/**/*.{tsx,tsx,css}"],
+  "include": ["src/**/*.{ts,tsx,css}"],
   "exclude": ["src/generated/**"],
+  "rubric": ["usability", "craft", "accessibility"],
   "maxFiles": 20,
   "maxFileBytes": 100000
 }
@@ -61,11 +62,16 @@ Create `.polish.json` in a project root. Everything is optional:
 - `model` - defaults are `gpt-4o-mini`, `claude-sonnet-4-20250514`, `openai/gpt-4o-mini` (OpenRouter), and `llama-3.3-70b-versatile` (Groq).
 - `baseUrl` - override the API endpoint, for a proxy or self-hosted gateway.
 - `include` / `exclude` - glob patterns using `**`, `*`, `?`, and `{a,b}`. `node_modules` and `.git` are always skipped.
+- `rubric` - which rubric layers to use. `usability` (core heuristics), `craft` (typography, color, spacing, motion, components, writing), `accessibility` (contrast, keyboard, semantics, forms, touch targets, reduced motion). All three are on by default; pick a subset to cut token cost on large reviews.
 - `maxFiles` / `maxFileBytes` - safety caps so a large file does not blow the token budget. Every run prints its estimated token count.
 
 ## The rubric and tailoring it
 
-The default rubric is Nielsen's 10 usability heuristics: visibility of system status, match with the real world, user control and freedom, consistency and standards, error prevention, recognition rather than recall, flexibility and efficiency, aesthetic and minimalist design, error diagnosis and recovery, help and documentation, plus an accessibility pass.
+The default rubric is three layers:
+
+- **usability** - 10 core heuristics: visibility of system status, match with the real world, user control and freedom, consistency and standards, error prevention, recognition rather than recall, flexibility and efficiency, aesthetic and minimalist design, error diagnosis and recovery, help and documentation.
+- **craft** - design-system discipline: visual craft (concentric radius, optical alignment, no magic numbers, no generic AI-default styling), color and tokens, typography, spacing and layout, motion, component composition, and writing.
+- **accessibility** - checkable requirements: contrast, keyboard support, semantic elements, forms, touch targets, and reduced motion.
 
 The rubric is a data structure. To replace it with your own philosophy, put a `principles` array in `.polish.json`:
 
@@ -133,7 +139,19 @@ Claude Desktop reads `~/Library/Application Support/Claude/claude_desktop_config
 
 ```bash
 npm test          # node --test: unit tests plus a mock-server end-to-end test
+node scripts/demo.mjs            # before/after demo, no API key needed
 node scripts/mcp-handshake.mjs   # manual MCP handshake test
+```
+
+## Demo
+
+`node scripts/demo.mjs` runs the full pipeline (config → prompts → LLM call → scoring → verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx` — a component with accessibility blockers and design-system leaks — then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `29/100` → `96/100` and `8/8 findings fixed`.
+
+With an API key set, the same commands run against a live model, and the verdicts are real. A recorded live run on Groq (llama-3.3-70b-versatile) scored the before card `62/100` (0 critical, 3 serious, 2 moderate) and the after card `78/100` (0 critical, 1 serious, 3 moderate). Verdicts vary by model and run, so use a live run to judge your own code:
+
+```bash
+polish demo/ProfileCard.before.jsx
+polish demo/ProfileCard.after.jsx demo/profile.css
 ```
 
 ## Files
@@ -141,12 +159,12 @@ node scripts/mcp-handshake.mjs   # manual MCP handshake test
 ```
 bin/polish.js        CLI entry, output rendering, exit codes
 mcp-server.js        MCP server (stdio) wrapping the review engine
-lib/rubric.js        Nielsen rubric and accessibility rules, swap for your own
+lib/rubric.js        default rubric layers (usability, craft, accessibility), swap for your own
 lib/config.js        config loading, glob expansion, defaults
 lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
-lib/scoring.js       Rams-style scoring and summaries
+lib/scoring.js       cap-ladder scoring and summaries
 test/                unit and integration tests
 scripts/             manual test scripts
 ```

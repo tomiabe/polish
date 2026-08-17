@@ -16,7 +16,7 @@ const RESET = "\x1b[0m";
 const SEV_COLOR = { critical: RED, serious: YELLOW, moderate: CYAN };
 
 function usage() {
-  return `polish - design/usability audit for UI code (Nielsen rubric)
+  return `polish - design/usability audit for UI code (layered rubric)
 
 Usage:
   polish [files...]                  Review files (or config globs)
@@ -35,6 +35,7 @@ Config (.polish.json):
   model:    "model-name"                            (provider default if omitted)
   include:  glob patterns for files                 (default: **/*.{tsx,jsx,vue,svelte,css,html})
   exclude:  glob patterns to skip
+  rubric:   layers to use: usability|craft|accessibility (default: all)
   principles: custom rubric (see README)
 
 API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ_API_KEY`;
@@ -110,6 +111,14 @@ async function runReview(cfg, opts, rubric) {
   const user = buildReviewUser(files);
   const tokens = estimateTokens(system) + estimateTokens(user);
   const list = files.map((f) => `  ${f.path} (${(f.content.length / 1024).toFixed(1)} KB)`).join("\n");
+
+  if (opts.json) {
+    // Machine-readable mode: emit pure JSON, nothing else.
+    const result = await reviewFiles(cfg, files);
+    console.log(JSON.stringify({ score: result.score, summary: result.assessment, findings: result.findings }, null, 2));
+    return;
+  }
+
   console.log(`${BOLD}polish${RESET} ${DIM}~${tokens.toLocaleString()} estimated tokens${RESET}`);
   console.log(list);
 
@@ -119,11 +128,6 @@ async function runReview(cfg, opts, rubric) {
   }
 
   const result = await reviewFiles(cfg, files);
-
-  if (opts.json) {
-    console.log(JSON.stringify({ score: result.score, summary: result.assessment, findings: result.findings }, null, 2));
-    return;
-  }
 
   printScore(result.score, result);
   if (result.assessment) console.log(`\n${DIM}${result.assessment}${RESET}`);
@@ -152,9 +156,10 @@ async function runVerify(cfg, findingsPath) {
   }
   const verified = await verifyFiles(cfg, files, items);
 
-  for (const v of verified) {
+  for (const [i, v] of verified.entries()) {
+    const id = v.id ?? `#${i + 1}`;
     const color = v.status === "fixed" ? GREEN : RED;
-    console.log(`${color}${v.status === "fixed" ? "FIXED" : "STILL PRESENT"}${RESET} ${BOLD}${v.id}${RESET} ${v.title} (${v.file}:${v.line ?? "?"})`);
+    console.log(`${color}${v.status === "fixed" ? "FIXED" : "STILL PRESENT"}${RESET} ${BOLD}${id}${RESET} ${v.title} (${v.file}:${v.line ?? "?"})`);
   }
   const fixed = verified.filter((v) => v.status === "fixed").length;
   console.log(`\n${BOLD}${fixed}/${verified.length}${RESET} findings fixed.`);

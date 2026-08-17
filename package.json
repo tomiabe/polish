@@ -1,7 +1,7 @@
 {
   "name": "polish",
   "version": "0.1.0",
-  "description": "Design/usability audit CLI for UI code. Rubric-based LLM review with Rams-style scoring.",
+  "description": "Design/usability audit CLI for UI code. Layered rubric-based LLM review with cap-ladder scoring.",
   "type": "module",
   "bin": {
     "polish": "./bin/polish.js"

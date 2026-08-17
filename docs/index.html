@@ -197,7 +197,7 @@
   .score-card .file { font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted); margin-top: 8px; }
   .bar { height: 8px; border-radius: 99px; background: var(--p-border); margin-top: 16px; overflow: hidden; }
   .bar i { display: block; height: 100%; border-radius: 99px; }
-  .bar.before i { width: 72%; background: var(--p-sev-serious); }
+  .bar.before i { width: 62%; background: var(--p-sev-serious); }
   .bar.after i { width: 78%; background: var(--p-fg); }
   .score-note { margin-top: 14px; font-size: 13px; color: var(--p-fg-muted); }
 
@@ -459,6 +459,10 @@
   }
   .live-scene { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; }
   .scene-note { font-size: 13px; color: var(--p-fg-muted); text-align: center; margin-top: 18px; }
+  .scene-verdict { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--p-fg-muted); margin-top: 10px; }
+  .scene-verdict i { font-size: 15px; }
+  .scene-verdict.before i, .scene-verdict.before b { color: var(--p-sev-serious); }
+  .scene-verdict b { font-family: var(--p-font-mono); font-size: 16px; color: var(--p-fg); }
   .live-code pre {
     width: 100%; max-height: 430px; overflow: auto; white-space: pre; font-size: 12.5px; margin: 0;
   }
@@ -608,11 +612,10 @@
 <main id="main">
   <header class="hero" id="top">
     <div class="wrap">
-      <h1>A self-hosted senior design review for every pull request.</h1>
+      <h1>The design review you run, not subscribe to.</h1>
       <p class="lede">
-        <span class="wordmark">polish_</span> audits your UI code for usability, design craft, and accessibility,
-        and returns a 0-100 score with severity, category, exact file and line, plus a concrete fix.
-        One Node script. No subscription. No quotas.
+        <span class="wordmark">polish_</span> audits your UI code for usability, design craft, and accessibility
+        with a self‑hosted Node script, your own API key, no bots in your repo, and no quotas.
       </p>
       <div class="cta">
         <a class="p-btn primary" href="#install"><i class="hgi-stroke hgi-console"></i>Get started</a>
@@ -656,11 +659,11 @@
       <div class="compare">
         <div class="score-card before">
           <div class="head"><i class="hgi-stroke hgi-alert-circle"></i>Before</div>
-          <div class="num">72<span style="font-size:20px;color:var(--p-fg-muted)">/100</span></div>
-          <div class="counts">0 critical, 2 serious, 2 moderate</div>
+          <div class="num">62<span style="font-size:20px;color:var(--p-fg-muted)">/100</span></div>
+          <div class="counts">0 critical, 3 serious, 2 moderate</div>
           <div class="file">demo/ProfileCard.before.jsx</div>
           <div class="bar before"><i></i></div>
-          <div class="score-note">No criticals. Two serious findings cost 20 points.</div>
+          <div class="score-note">No criticals. Three serious and two moderate findings cost 38 points.</div>
         </div>
         <div class="score-card after">
           <div class="head"><i class="hgi-stroke hgi-checkmark-circle-01"></i>After</div>
@@ -674,24 +677,29 @@
 
       <div class="findings">
         <div class="finding">
-          <span class="sev serious">serious</span><span class="cat">[A11Y]</span>
-          <span>Non-semantic elements used for buttons. Message and Delete are divs with onClick, so they are not keyboard focusable.</span>
+          <span class="sev serious">serious</span><span class="cat">[H1]</span>
+          <span>No loading state for message and delete actions. Clicking gives no feedback.</span>
           <span class="where">:14</span>
         </div>
         <div class="finding">
           <span class="sev serious">serious</span><span class="cat">[H3]</span>
-          <span>Lack of confirmation for destructive action. Delete runs without confirmation.</span>
+          <span>No confirmation for the delete action. Delete runs with no way back.</span>
           <span class="where">:17</span>
         </div>
         <div class="finding">
-          <span class="sev moderate">moderate</span><span class="cat">[C1]</span>
-          <span>Magic numbers used for styling. borderRadius 12 is not from the design scale.</span>
-          <span class="where">:4</span>
+          <span class="sev serious">serious</span><span class="cat">[A11Y]</span>
+          <span>Missing alt text for images. The avatar has no accessible name.</span>
+          <span class="where">:5</span>
         </div>
         <div class="finding">
           <span class="sev moderate">moderate</span><span class="cat">[H2]</span>
-          <span>Unfamiliar platform conventions. The icon-only button has no descriptive aria-label.</span>
-          <span class="where">:20</span>
+          <span>Unconventional button labels. Message and Delete are terse and unspecific.</span>
+          <span class="where">:15</span>
+        </div>
+        <div class="finding">
+          <span class="sev moderate">moderate</span><span class="cat">[C1]</span>
+          <span>Magic numbers in styles. borderRadius 12 is not from the design scale.</span>
+          <span class="where">:4</span>
         </div>
       </div>
 
@@ -699,23 +707,23 @@
       <div class="findings">
         <div class="finding">
           <span class="sev serious">serious</span><span class="cat">[A11Y]</span>
-          <span>Insufficient text contrast flagged for the bio and stats text.</span>
-          <span class="where">css:44</span>
+          <span>Icon button focus indicator flagged as not visible on all backgrounds.</span>
+          <span class="where">css:106</span>
         </div>
         <div class="finding">
-          <span class="sev moderate">moderate</span><span class="cat">[H1]</span>
-          <span>No loading state for the delete action.</span>
-          <span class="where">:25</span>
+          <span class="sev moderate">moderate</span><span class="cat">[H2]</span>
+          <span>Message button label could be more descriptive.</span>
+          <span class="where">:18</span>
         </div>
         <div class="finding">
           <span class="sev moderate">moderate</span><span class="cat">[H3]</span>
-          <span>Browser confirm dialog preferred over an in-app confirmation.</span>
+          <span>No cancel button on the delete confirmation.</span>
           <span class="where">:25</span>
         </div>
         <div class="finding">
           <span class="sev moderate">moderate</span><span class="cat">[C2]</span>
-          <span>Color tokens used for both the primary button and the focus outline.</span>
-          <span class="where">css:73</span>
+          <span>Color tokens could be more semantic. --color-primary could be --color-brand.</span>
+          <span class="where">css:7</span>
         </div>
       </div>
 
@@ -779,6 +787,7 @@
             </div>
           </div>
           <p class="scene-note">Gradient background, hardcoded hex, divs as buttons, no focus styles, cramped 6px gaps.</p>
+          <p class="scene-verdict before"><i class="hgi-stroke hgi-alert-circle"></i>Live review: <b>62/100</b>, 3 serious, 2 moderate</p>
         </div>
         <div class="live-scene" id="live-ui-after" hidden>
           <article class="pol-card">
@@ -798,6 +807,7 @@
             </div>
           </article>
           <p class="scene-note">Tokens, real buttons, focus-visible rings, 4px spacing scale, accessible names.</p>
+          <p class="scene-verdict after"><i class="hgi-stroke hgi-checkmark-circle-01"></i>Live review: <b>78/100</b>, 1 serious, 3 moderate</p>
         </div>
         <div class="live-scene live-code" id="live-code-before" hidden><pre></pre></div>
         <div class="live-scene live-code" id="live-code-after" hidden><pre></pre></div>
@@ -897,7 +907,7 @@
               <span class="lbl"><span class="sev serious">serious</span></span>
               <div class="stepper">
                 <button type="button" data-sev="serious" data-dir="-1" aria-label="Remove one serious finding">&minus;</button>
-                <span class="val" id="val-serious">2</span>
+                <span class="val" id="val-serious">3</span>
                 <button type="button" data-sev="serious" data-dir="1" aria-label="Add one serious finding">+</button>
               </div>
             </div>
@@ -910,7 +920,7 @@
               </div>
             </div>
             <div class="sim-out">
-              <div class="score" id="sim-score" aria-live="polite">72</div>
+              <div class="score" id="sim-score" aria-live="polite">62</div>
               <div class="verdict" id="sim-verdict">No criticals. Only deductions apply.</div>
             </div>
             <div class="sim-reset">
@@ -1006,7 +1016,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 23,400 tokens, under a cent on most models.
+        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 24,000 tokens, under a cent on most models.
       </p>
     </div>
   </section>
@@ -1097,7 +1107,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
     });
 
     // ===== score simulator =====
-    var counts = { critical: 0, serious: 2, moderate: 2 };
+    var counts = { critical: 0, serious: 3, moderate: 2 };
     var MAX = 9;
     var els = {
       critical: document.getElementById("val-critical"),
@@ -1132,7 +1142,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       });
     });
     document.getElementById("sim-reset").addEventListener("click", function () {
-      counts = { critical: 0, serious: 2, moderate: 2 };
+      counts = { critical: 0, serious: 3, moderate: 2 };
       Object.keys(counts).forEach(function (k) { els[k].textContent = String(counts[k]); });
       compute();
     });
@@ -1316,31 +1326,36 @@ export function ProfileCard({ user, onDelete, onMessage, compact = false }) {
       ["line", [["polish ", "b"], ["~3,094 estimated tokens", "dim"]], 70],
       ["line", [["  demo/ProfileCard.before.jsx (1.3 KB)", "dim"]], 40],
       ["line", [], 60],
-      ["line", [["Score: ", "b"], ["72/100", "yellow b"]], 180],
-      ["line", [["Critical: ", "dim"], ["0", ""], ["   Serious: ", "dim"], ["2", "yellow"], ["   Moderate: ", "dim"], ["2", "cyan"]], 130],
-      ["line", [["  A11Y: 1 finding", "dim"]], 50],
-      ["line", [["  C1: 1 finding", "dim"]], 40],
+      ["line", [["Score: ", "b"], ["62/100", "yellow b"]], 180],
+      ["line", [["Critical: ", "dim"], ["0", ""], ["   Serious: ", "dim"], ["3", "yellow"], ["   Moderate: ", "dim"], ["2", "cyan"]], 130],
+      ["line", [["  H1: 1 finding", "dim"]], 40],
       ["line", [["  H2: 1 finding", "dim"]], 40],
-      ["line", [["  H3: 1 finding", "dim"]], 60],
+      ["line", [["  H3: 1 finding", "dim"]], 40],
+      ["line", [["  C1: 1 finding", "dim"]], 40],
+      ["line", [["  A11Y: 1 finding", "dim"]], 60],
       ["line", [], 80],
-      ["line", [["ProfileCard UI has several issues with accessibility, consistency, and design standards", "dim"]], 200],
+      ["line", [["ProfileCard and CompactProfileCard components have several usability and design issues", "dim"]], 200],
       ["line", [], 80],
-      finding("yellow", "SERIOUS", "A11Y", "Non-semantic elements used for buttons",
+      finding("yellow", "SERIOUS", "H1", "No loading state for message and delete actions",
         "demo/ProfileCard.before.jsx:14",
-        "The 'Message' and 'Delete' buttons are using non-semantic 'div' elements instead of 'button' elements.",
-        "Replace 'div' with 'button' and add a 'type' attribute: <button type=\"button\" className=\"btn primary\" onClick={() => onMessage(user.id)}>."),
-      finding("yellow", "SERIOUS", "H3", "Lack of confirmation for destructive action",
+        "The message and delete actions do not provide any feedback to the user when clicked, which can lead to confusion and frustration.",
+        "Add a loading state to the message and delete buttons, such as a spinner or a disabled state with a loading message."),
+      finding("cyan", "MODERATE", "H2", "Unconventional button labels",
+        "demo/ProfileCard.before.jsx:15",
+        "The button labels 'Message' and 'Delete' are not descriptive and do not follow familiar platform conventions.",
+        "Use more descriptive button labels, such as 'Send Message' and 'Delete Profile'."),
+      finding("yellow", "SERIOUS", "H3", "No confirmation for delete action",
         "demo/ProfileCard.before.jsx:17",
-        "The 'Delete' button is a destructive action that requires confirmation before execution.",
-        "Add a confirmation dialog or prompt before running the 'onDelete' callback."),
-      finding("cyan", "MODERATE", "C1", "Magic numbers used for styling",
+        "The delete action does not provide any confirmation to the user, which can lead to accidental deletion of profiles.",
+        "Add a confirmation dialog or prompt to confirm the delete action before deleting the profile."),
+      finding("cyan", "MODERATE", "C1", "Magic numbers in styles",
         "demo/ProfileCard.before.jsx:4",
-        "The 'borderRadius' style property uses a magic number (12) instead of a value from the design scale or tokens.",
-        "Replace the magic number with a value from the design scale or tokens, e.g. 'borderRadius: theme.spacing.sm'."),
-      finding("cyan", "MODERATE", "H2", "Unfamiliar platform conventions",
-        "demo/ProfileCard.before.jsx:20",
-        "The 'more' icon button does not follow familiar platform conventions for icon buttons.",
-        "Add a descriptive 'aria-label' attribute to the icon button, e.g. 'aria-label=\"More options\"'.")
+        "The styles use magic numbers, such as '12' for the border radius, which can make the code harder to maintain and understand.",
+        "Use a consistent design scale or tokens to define the border radius and other styles."),
+      finding("yellow", "SERIOUS", "A11Y", "Missing alt text for images",
+        "demo/ProfileCard.before.jsx:5",
+        "The images do not have alt text, which can make the content inaccessible to screen readers and users with visual impairments.",
+        "Add alt text to the images, such as the user's name or a descriptive text.")
     ];
 
     function buildSteps() {
