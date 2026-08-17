@@ -102,7 +102,7 @@
   }
   .nav-inner { display: flex; align-items: center; gap: 24px; min-height: 60px; }
   .brand { font-family: var(--p-font-mono); font-weight: 600; font-size: 18px; color: var(--p-fg); text-decoration: none; }
-  .brand:hover { color: var(--p-fg); }
+  .brand:hover, .brand:active { color: var(--p-fg); text-decoration: none; }
   .brand .cursor { color: var(--p-border-strong); }
   .nav-links { display: flex; gap: 4px; margin-left: 8px; }
   .nav-links a {
@@ -110,6 +110,8 @@
     padding: 8px 12px; border-radius: var(--p-radius-sm);
   }
   .nav-links a:hover { color: var(--p-fg); background: var(--p-canvas-subtle); text-decoration: none; }
+  .nav-links a.active { color: var(--p-fg); background: var(--p-canvas-subtle); }
+  .nav-menu a.active { color: var(--p-fg); font-weight: 600; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
   .theme-switch {
     display: flex; gap: 2px; background: var(--p-canvas-subtle);
@@ -152,6 +154,7 @@
   .hero .lede {
     max-width: 620px; margin: 24px auto 0; color: var(--p-fg-muted); font-size: 19px;
   }
+  .lede .wordmark { font-family: var(--p-font-mono); font-weight: 600; color: var(--p-fg); }
   .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .p-btn {
     display: inline-flex; align-items: center; gap: 8px;
@@ -281,6 +284,16 @@
     background: var(--p-canvas-subtle); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
     padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.7; margin: 0;
   }
+  .code-block { position: relative; }
+  .code-block .copy-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid var(--p-border); background: var(--p-canvas); color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 12px; font-weight: 500;
+    padding: 4px 9px; border-radius: var(--p-radius-sm); cursor: pointer; min-height: 30px;
+  }
+  .code-block .copy-btn:hover { color: var(--p-fg); border-color: var(--p-border-strong); }
+  .code-block pre { padding-right: 88px; }
   pre .c { color: var(--p-fg-muted); }
   pre .g { color: var(--p-fg); }
   .audit-note {
@@ -424,6 +437,100 @@
     .cur { animation: none; }
   }
 
+  /* ============ live UI demo ============ */
+  .live-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .live-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+  .live-toggle {
+    display: flex; gap: 2px; background: var(--p-canvas-subtle);
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px;
+  }
+  .live-toggle button {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 0; background: transparent; color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
+    padding: 7px 12px; border-radius: var(--p-radius-sm); cursor: pointer; min-height: 36px;
+  }
+  .live-toggle button:hover { color: var(--p-fg); }
+  .live-toggle button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .live-toggle i { font-size: 16px; }
+  .live-panel {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    box-shadow: var(--p-shadow); padding: 32px 24px; display: flex; justify-content: center; min-height: 430px;
+  }
+  .live-scene { width: 100%; max-width: 380px; display: flex; flex-direction: column; align-items: center; }
+  .scene-note { font-size: 13px; color: var(--p-fg-muted); text-align: center; margin-top: 18px; }
+  .live-code pre {
+    width: 100%; max-height: 430px; overflow: auto; white-space: pre; font-size: 12.5px; margin: 0;
+  }
+
+  /* before: the rough AI-generated card */
+  .ai-card {
+    width: 100%; border-radius: 12px; padding: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+    color: #ffffff; font-size: 13px; line-height: 1.45;
+    transition: all 200ms;
+  }
+  .ai-card .ai-avatar {
+    width: 100%; height: 120px; border-radius: 8px; background: rgba(255, 255, 255, 0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 700; color: rgba(255, 255, 255, 0.85); margin-bottom: 8px;
+  }
+  .ai-card h3 { margin: 0 0 4px; font-size: 16px; }
+  .ai-card .ai-bio { margin: 0 0 6px; color: rgba(255, 255, 255, 0.72); }
+  .ai-card .ai-stats { display: flex; gap: 6px; font-size: 11px; color: rgba(255, 255, 255, 0.62); margin-bottom: 8px; }
+  .ai-card .ai-stats span { background: rgba(255, 255, 255, 0.16); padding: 2px 6px; border-radius: 4px; }
+  .ai-card .ai-actions { display: flex; gap: 6px; }
+  .ai-card .ai-btn { flex: 1; text-align: center; padding: 6px 0; border-radius: 6px; font-weight: 600; font-size: 12px; }
+  .ai-card .ai-primary { background: #2563eb; }
+  .ai-card .ai-danger { background: #dc2626; }
+  .ai-card .ai-icon { flex: 0 0 32px; background: rgba(255, 255, 255, 0.25); color: rgba(255, 255, 255, 0.9); }
+
+  /* after: the polished token-based card */
+  .pol-card {
+    width: 100%; background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); overflow: hidden;
+    color: #1a1d21; font-size: 14px; line-height: 1.5;
+  }
+  .pol-card .pol-avatar {
+    width: 100%; height: 140px; background: #e9ecef; display: flex; align-items: center; justify-content: center;
+    font-size: 34px; font-weight: 600; color: #6c757d;
+  }
+  .pol-body { padding: 16px; }
+  .pol-card h3 { margin: 0 0 8px; font-size: 18px; }
+  .pol-card .pol-bio { margin: 0 0 12px; color: #4b5563; }
+  .pol-stats { display: flex; gap: 12px; margin: 0 0 12px; }
+  .pol-stats span { color: #4b5563; font-size: 13px; }
+  .pol-actions { display: flex; gap: 8px; }
+  .pol-btn {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
+    padding: 0 16px; border-radius: 6px; border: 1px solid transparent;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .pol-btn:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .pol-primary { background: #2563eb; color: #ffffff; }
+  .pol-primary:hover { background: #1d4ed8; }
+  .pol-danger { background: #fef2f2; color: #b91c1c; border-color: #b91c1c; }
+  .pol-danger:hover { background: #fee2e2; }
+  .pol-icon { min-width: 40px; padding: 0; background: #ffffff; border-color: #d1d5db; color: #4b5563; }
+  .pol-icon:hover { background: #f3f4f6; }
+
+  /* ============ back to top ============ */
+  .to-top {
+    position: fixed; right: 24px; bottom: 24px; z-index: 40;
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--p-border); background: var(--p-emphasis); color: var(--p-emphasis-fg);
+    box-shadow: var(--p-shadow); cursor: pointer; font-size: 20px;
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity 180ms ease-out, transform 180ms ease-out, visibility 180ms;
+  }
+  .to-top.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+  .to-top:hover { opacity: 0.88; }
+  @media (prefers-reduced-motion: reduce) {
+    .to-top { transition: none; }
+  }
+
   /* ============ responsive ============ */
   @media (max-width: 920px) {
     .nav-links { display: none; }
@@ -443,6 +550,8 @@
     .sim-row { flex-wrap: wrap; }
     .term-body { height: 400px; font-size: 12px; }
     .term-title { max-width: 46vw; }
+    .live-panel { padding: 24px 16px; min-height: 0; }
+    .to-top { right: 16px; bottom: 16px; }
   }
 </style>
 <script>
@@ -499,10 +608,10 @@
 <main id="main">
   <header class="hero" id="top">
     <div class="wrap">
-      <h1>A senior design review for every pull request.<br />Run it yourself.</h1>
+      <h1>A self-hosted senior design review for every pull request.</h1>
       <p class="lede">
-        polish audits your UI code against a layered rubric: usability, design craft, and accessibility.
-        It returns a 0 to 100 score, severity, category, exact file and line, and a concrete fix.
+        <span class="wordmark">polish_</span> audits your UI code for usability, design craft, and accessibility,
+        and returns a 0-100 score with severity, category, exact file and line, plus a concrete fix.
         One Node script. No subscription. No quotas.
       </p>
       <div class="cta">
@@ -554,7 +663,7 @@
           <div class="score-note">No criticals. Two serious findings cost 20 points.</div>
         </div>
         <div class="score-card after">
-          <div class="head"><i class="hgi-stroke hgi-checkmark-circle"></i>After</div>
+          <div class="head"><i class="hgi-stroke hgi-checkmark-circle-01"></i>After</div>
           <div class="num">78<span style="font-size:20px;color:var(--p-fg-muted)">/100</span></div>
           <div class="counts">0 critical, 1 serious, 3 moderate</div>
           <div class="file">demo/ProfileCard.after.jsx + demo/profile.css</div>
@@ -634,6 +743,68 @@
     </div>
   </section>
 
+  <section id="live">
+    <div class="wrap">
+      <h2>See it live</h2>
+      <p class="sub">
+        The same card, rendered two ways. Toggle Before and After to see what polish changes,
+        then flip to Code to inspect the source behind each version.
+      </p>
+      <div class="live-head">
+        <div class="live-toggles">
+          <div class="live-toggle" data-kind="state" role="group" aria-label="Card version">
+            <button type="button" data-value="before" aria-pressed="true">Before</button>
+            <button type="button" data-value="after" aria-pressed="false">After</button>
+          </div>
+          <div class="live-toggle" data-kind="view" role="group" aria-label="View">
+            <button type="button" data-value="ui" aria-pressed="true"><i class="hgi-stroke hgi-eye"></i>UI</button>
+            <button type="button" data-value="code" aria-pressed="false"><i class="hgi-stroke hgi-code-circle"></i>Code</button>
+          </div>
+        </div>
+      </div>
+      <div class="live-panel">
+        <div class="live-scene" id="live-ui-before">
+          <div class="ai-card">
+            <div class="ai-avatar">AM</div>
+            <h3>Alice Monroe</h3>
+            <p class="ai-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
+            <div class="ai-stats">
+              <span>128 posts</span>
+              <span>9.4k followers</span>
+            </div>
+            <div class="ai-actions">
+              <span class="ai-btn ai-primary">Message</span>
+              <span class="ai-btn ai-danger">Delete</span>
+              <span class="ai-btn ai-icon">&#8942;</span>
+            </div>
+          </div>
+          <p class="scene-note">Gradient background, hardcoded hex, divs as buttons, no focus styles, cramped 6px gaps.</p>
+        </div>
+        <div class="live-scene" id="live-ui-after" hidden>
+          <article class="pol-card">
+            <div class="pol-avatar" role="img" aria-label="Avatar of Alice Monroe">AM</div>
+            <div class="pol-body">
+              <h3>Alice Monroe</h3>
+              <p class="pol-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
+              <div class="pol-stats">
+                <span>128 posts</span>
+                <span>9.4k followers</span>
+              </div>
+              <div class="pol-actions">
+                <button class="pol-btn pol-primary" type="button">Message</button>
+                <button class="pol-btn pol-danger" type="button">Delete</button>
+                <button class="pol-btn pol-icon" type="button" aria-label="More actions">&#8942;</button>
+              </div>
+            </div>
+          </article>
+          <p class="scene-note">Tokens, real buttons, focus-visible rings, 4px spacing scale, accessible names.</p>
+        </div>
+        <div class="live-scene live-code" id="live-code-before" hidden><pre></pre></div>
+        <div class="live-scene live-code" id="live-code-after" hidden><pre></pre></div>
+      </div>
+    </div>
+  </section>
+
   <section id="cli" class="alt">
     <div class="wrap">
       <h2>Watch it run</h2>
@@ -649,6 +820,9 @@
           <span class="term-title">polish demo/ProfileCard.before.jsx</span>
           <button type="button" class="term-replay" id="term-replay">
             <i class="hgi-stroke hgi-refresh" aria-hidden="true"></i>Replay
+          </button>
+          <button type="button" class="term-replay" id="term-copy" aria-label="Copy terminal output">
+            <i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy
           </button>
         </div>
         <div class="term-body" id="term-body" role="region" aria-label="Terminal output of polish reviewing ProfileCard.before.jsx"></div>
@@ -782,45 +956,57 @@
           <div class="step-head">
             <span class="num">01</span><i class="hgi-stroke hgi-console"></i><h3>Install</h3>
           </div>
-          <pre><span class="c"># bash</span>
+          <div class="code-block">
+            <button type="button" class="copy-btn" aria-label="Copy install commands"><i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy</button>
+            <pre><span class="c"># bash</span>
 git clone https://github.com/tomiabe/polish.git
 cd polish
 npm link</pre>
+          </div>
         </div>
         <div class="step">
           <div class="step-head">
             <span class="num">02</span><i class="hgi-stroke hgi-lock-key"></i><h3>Point it at a model</h3>
           </div>
-          <pre><span class="c"># export one key</span>
+          <div class="code-block">
+            <button type="button" class="copy-btn" aria-label="Copy API key command"><i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy</button>
+            <pre><span class="c"># export one key</span>
 export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / OPENROUTER</span></pre>
+          </div>
         </div>
         <div class="step">
           <div class="step-head">
             <span class="num">03</span><i class="hgi-stroke hgi-code-circle"></i><h3>Audit your UI</h3>
           </div>
-          <pre>polish                                   <span class="c"># audit files matched by config globs</span>
+          <div class="code-block">
+            <button type="button" class="copy-btn" aria-label="Copy polish commands"><i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy</button>
+            <pre>polish                                   <span class="c"># audit files matched by config globs</span>
 polish src/components src/pages/*.tsx    <span class="c"># or specific files</span>
 polish --verify findings.json           <span class="c"># re-check that fixes landed</span>
 polish --json                           <span class="c"># machine-readable, for CI</span>
 polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
+          </div>
           <p>Exits with code 1 when critical findings exist. Wire it into pre-commit or CI.</p>
         </div>
         <div class="step">
           <div class="step-head">
             <span class="num">04</span><i class="hgi-stroke hgi-sliders-horizontal"></i><h3>Tailor the rubric</h3>
           </div>
-          <pre><span class="c">// .polish.json, everything optional</span>
+          <div class="code-block">
+            <button type="button" class="copy-btn" aria-label="Copy example config"><i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy</button>
+            <pre><span class="c">// .polish.json, everything optional</span>
 {
   <span class="g">"provider"</span>: "anthropic",
   <span class="g">"rubric"</span>: ["usability", "craft", "accessibility"],
   <span class="g">"include"</span>: ["src/**/*.{tsx,css}"],
   <span class="g">"maxFiles"</span>: 20
 }</pre>
+          </div>
         </div>
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 19,500 tokens, under a cent on most models.
+        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 23,400 tokens, under a cent on most models.
       </p>
     </div>
   </section>
@@ -839,7 +1025,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
           <p>Review UI files by content. Returns score, counts, assessment, and findings with severity, category, file:line, and a fix.</p>
         </div>
         <div class="mcp-card">
-          <div class="icon"><i class="hgi-stroke hgi-checkmark-circle"></i></div>
+          <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>
           <h3>polish_verify_fixes</h3>
           <p>Re-check previous findings against updated content. Reports FIXED or STILL PRESENT per finding.</p>
         </div>
@@ -856,9 +1042,13 @@ polish --dry-run                        <span class="c"># preview cost, no API c
 <footer>
   <div class="wrap foot">
     <span>polish is MIT licensed. Built for people who review their own UI.</span>
-    <span class="credit">Made by <a href="https://studio.tomiabe.com">tomi abe studio</a></span>
+    <span class="credit">Made by <a href="https://studio.tomiabe.com">Tomi Abe Studio</a></span>
   </div>
 </footer>
+
+<button type="button" class="to-top" id="to-top" aria-label="Back to top">
+  <i class="hgi-stroke hgi-arrow-up-01" aria-hidden="true"></i>
+</button>
 
 <script>
   (function () {
@@ -1260,6 +1450,123 @@ export function ProfileCard({ user, onDelete, onMessage, compact = false }) {
     document.getElementById("term-replay").addEventListener("click", function () {
       if (!termStarted) { termStarted = true; }
       runTerminal();
+    });
+
+    // ===== copy to clipboard (silent) =====
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).catch(function () { legacyCopy(text); });
+      }
+      legacyCopy(text);
+      return Promise.resolve();
+    }
+    function legacyCopy(text) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    function showCopied(btn) {
+      var orig = btn.innerHTML;
+      btn.innerHTML = '<i class="hgi-stroke hgi-checkmark-circle-01" aria-hidden="true"></i>Copied';
+      clearTimeout(btn._copyT);
+      btn._copyT = setTimeout(function () { btn.innerHTML = orig; }, 1600);
+    }
+
+    document.querySelectorAll(".copy-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var block = btn.closest(".code-block");
+        var text = block ? block.querySelector("pre").textContent : "";
+        copyText(text.trim()).then(function () { showCopied(btn); });
+      });
+    });
+
+    document.getElementById("term-copy").addEventListener("click", function () {
+      var out = [];
+      TERM.forEach(function (item) {
+        if (item[0] === "cmd") out.push("$ " + item[1]);
+        else if (item[0] === "find") {
+          var f = item[1];
+          out.push("  " + f.label + " [" + f.cat + "] " + f.title);
+          out.push("  " + f.loc);
+          out.push("  " + f.msg);
+          out.push("  Fix: " + f.fix);
+          out.push("");
+        } else if (item[0] === "line") {
+          out.push((item[1] || []).map(function (g) { return g[0]; }).join(""));
+        }
+      });
+      var text = out.join("\n").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "");
+      copyText(text).then(function () { showCopied(document.getElementById("term-copy")); });
+    });
+
+    // ===== live UI demo =====
+    var liveState = "before";
+    var liveView = "ui";
+    var livePanels = {
+      before: { ui: document.getElementById("live-ui-before"), code: document.getElementById("live-code-before") },
+      after: { ui: document.getElementById("live-ui-after"), code: document.getElementById("live-code-after") }
+    };
+    document.getElementById("live-code-before").querySelector("pre").textContent = BEFORE_SRC.trim();
+    document.getElementById("live-code-after").querySelector("pre").textContent = AFTER_SRC.trim();
+    function renderLive() {
+      Object.keys(livePanels).forEach(function (st) {
+        Object.keys(livePanels[st]).forEach(function (v) {
+          livePanels[st][v].hidden = !(st === liveState && v === liveView);
+        });
+      });
+    }
+    document.querySelectorAll(".live-toggle").forEach(function (group) {
+      group.addEventListener("click", function (e) {
+        var btn = e.target.closest("button");
+        if (!btn) return;
+        if (group.dataset.kind === "state") liveState = btn.dataset.value;
+        else liveView = btn.dataset.value;
+        group.querySelectorAll("button").forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        });
+        renderLive();
+      });
+    });
+    renderLive();
+
+    // ===== scrollspy =====
+    var spySections = ["demo", "rubric", "scoring", "install", "mcp"].map(function (id) {
+      return {
+        id: id,
+        el: document.getElementById(id),
+        link: document.querySelector('.nav-links a[href="#' + id + '"]')
+      };
+    });
+    function updateSpy() {
+      var probe = window.scrollY + 90;
+      var current = null;
+      spySections.forEach(function (s) {
+        if (s.el.offsetTop <= probe) current = s;
+      });
+      spySections.forEach(function (s) {
+        var on = s === current;
+        s.link.classList.toggle("active", on);
+        var menuLink = document.querySelector('.nav-menu a[href="#' + s.id + '"]');
+        if (menuLink) menuLink.classList.toggle("active", on);
+      });
+    }
+
+    // ===== back to top =====
+    var toTop = document.getElementById("to-top");
+    function onScroll() {
+      toTop.classList.toggle("visible", window.scrollY > 600);
+      updateSpy();
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    toTop.addEventListener("click", function () {
+      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
     });
   })();
 </script>
