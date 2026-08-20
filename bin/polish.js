@@ -31,14 +31,15 @@ Options:
   --help            Show this help
 
 Config (.polish.json):
-  provider: "openai" | "anthropic" | "openrouter" | "groq"   (auto-detected from keys)
+  provider: "openai" | "anthropic" | "openrouter" | "groq" | "gemini"   (auto-detected from keys)
+  providers: ordered fallback list, like ["gemini", "groq"]
   model:    "model-name"                            (provider default if omitted)
   include:  glob patterns for files                 (default: **/*.{tsx,jsx,vue,svelte,css,html})
   exclude:  glob patterns to skip
   rubric:   layers to use: usability|craft|accessibility (default: all)
   principles: custom rubric (see README)
 
-API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ_API_KEY`;
+API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ_API_KEY | GEMINI_API_KEY`;
 }
 
 function parseArgs(argv) {

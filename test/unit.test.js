@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { scoreFindings, summarize } from "../lib/scoring.js";
 import { expandGlobs } from "../lib/config.js";
+import { resolveProviderPlan } from "../lib/llm.js";
 
 test("score starts at 100 with no findings", () => {
   assert.equal(scoreFindings([]), 100);
@@ -44,4 +45,31 @@ test("glob matches braces and **", async () => {
   assert.ok(files.some((f) => f.endsWith("BrokenCard.jsx")), "found jsx fixture");
   const css = await expandGlobs(["**/*.css"], root);
   assert.equal(css.length, 0);
+});
+
+test("provider plan respects explicit lists and env fallback", () => {
+  const original = {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY
+  };
+
+  try {
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.OPENROUTER_API_KEY;
+    process.env.GROQ_API_KEY = "groq";
+    process.env.GEMINI_API_KEY = "gemini";
+
+    assert.deepEqual(resolveProviderPlan({ providers: ["gemini", "groq"] }), ["gemini", "groq"]);
+    assert.deepEqual(resolveProviderPlan({}), ["groq", "gemini"]);
+    assert.deepEqual(resolveProviderPlan({ provider: "openai" }), ["openai"]);
+  } finally {
+    for (const [key, value] of Object.entries(original)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });

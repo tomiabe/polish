@@ -1,0 +1,1 @@
+{"providers":["openai","gemini"],"model":"gemini-test","baseUrl":"http://127.0.0.1:57530"}

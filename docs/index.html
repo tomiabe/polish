@@ -313,6 +313,31 @@
   }
   .audit-note i { color: var(--p-fg); margin-right: 6px; }
 
+  /* ============ provider grid ============ */
+  .provider-grid {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 32px;
+  }
+  .provider-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--p-canvas); border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-md); padding: 12px 16px;
+    flex: 1 1 180px; min-width: 0;
+  }
+  .provider-pill .dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  }
+  .provider-pill .info { display: flex; flex-direction: column; min-width: 0; }
+  .provider-pill .pname { font-weight: 600; font-size: 14px; line-height: 1.2; }
+  .provider-pill .pmodel {
+    font-family: var(--p-font-mono); font-size: 11.5px;
+    color: var(--p-fg-muted); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  @media (max-width: 760px) {
+    .provider-grid { gap: 8px; }
+    .provider-pill { flex: 1 1 calc(50% - 4px); }
+  }
+
   /* ============ mcp ============ */
   .mcp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .mcp-card {
@@ -628,6 +653,7 @@
         <span class="wordmark">polish_</span> audits your UI code for usability, design craft, and accessibility
         with a self‑hosted Node script, your own API key, no bots in your repo, and no quotas.
       </p>
+      <p style="margin-top:16px;font-size:15px;color:var(--p-fg-muted)">For designers and frontend engineers reviewing real UI code.</p>
       <div class="cta">
         <a class="p-btn primary" href="#install"><i class="hgi-stroke hgi-console"></i>Get started</a>
         <a class="p-btn" href="#demo"><i class="hgi-stroke hgi-arrow-right-01"></i>See it run</a>
@@ -970,9 +996,32 @@
     <div class="wrap">
       <h2>Install in two commands</h2>
       <p class="sub">
-        Works with Groq, OpenAI, Anthropic, OpenRouter, or any OpenAI-compatible endpoint.
-        The core is a single Node script with zero dependencies.
+        Works with Groq, OpenAI, Anthropic, Gemini, OpenRouter, or any OpenAI-compatible endpoint.
+        One provider per run, or set a fallback chain and polish tries them in order.
+        Best for app UI reviews. Not a general code quality or backend linter.
       </p>
+      <div class="provider-grid" role="list" aria-label="Supported providers">
+        <div class="provider-pill" role="listitem">
+          <span class="dot" style="background:#F55036"></span>
+          <div class="info"><span class="pname">Groq</span><span class="pmodel">openai/gpt-oss-120b</span></div>
+        </div>
+        <div class="provider-pill" role="listitem">
+          <span class="dot" style="background:#10A37F"></span>
+          <div class="info"><span class="pname">OpenAI</span><span class="pmodel">gpt-4o-mini</span></div>
+        </div>
+        <div class="provider-pill" role="listitem">
+          <span class="dot" style="background:#D4A574"></span>
+          <div class="info"><span class="pname">Anthropic</span><span class="pmodel">claude-sonnet-4</span></div>
+        </div>
+        <div class="provider-pill" role="listitem">
+          <span class="dot" style="background:#4285F4"></span>
+          <div class="info"><span class="pname">Gemini</span><span class="pmodel">gemini-2.5-flash</span></div>
+        </div>
+        <div class="provider-pill" role="listitem">
+          <span class="dot" style="background:#6366F1"></span>
+          <div class="info"><span class="pname">OpenRouter</span><span class="pmodel">gpt-4o-mini</span></div>
+        </div>
+      </div>
       <div class="steps">
         <div class="step">
           <div class="step-head">
@@ -993,7 +1042,7 @@ npm link</pre>
           <div class="code-block">
             <button type="button" class="copy-btn" aria-label="Copy API key command"><i class="hgi-stroke hgi-copy-01" aria-hidden="true"></i>Copy</button>
             <pre><span class="c"># export one key</span>
-export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / OPENROUTER</span></pre>
+export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / GEMINI / OPENROUTER</span></pre>
           </div>
         </div>
         <div class="step">
@@ -1019,6 +1068,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
             <pre><span class="c">// .polish.json, everything optional</span>
 {
   <span class="g">"provider"</span>: "anthropic",
+  <span class="g">"providers"</span>: ["gemini", "groq"],
   <span class="g">"rubric"</span>: ["usability", "craft", "accessibility"],
   <span class="g">"include"</span>: ["src/**/*.{tsx,css}"],
   <span class="g">"maxFiles"</span>: 20
@@ -1028,7 +1078,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 24,000 tokens, under a cent on most models.
+        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 25,000 tokens, under a cent on most models.
       </p>
     </div>
   </section>

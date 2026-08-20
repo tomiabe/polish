@@ -1,6 +1,6 @@
 # polish
 
-The design review you run, not subscribe to. Landing page: [tomiabe.github.io/polish](https://tomiabe.github.io/polish/). polish audits your UI code for usability, design craft, and accessibility, and scores it 0-100 with severity, category, exact file and line, plus a concrete fix. One self-hosted Node script, your own LLM API key, no bots in your repo, no quotas.
+`polish` is a self-hosted design review CLI and MCP server for UI code. It scores usability, craft, and accessibility from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
 
 ## Why
 
@@ -10,7 +10,8 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 
 - Reviews against a layered rubric: usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility. The rubric is plain data, so it can be swapped for any design philosophy.
 - Cap-ladder scoring. Critical findings cap the ceiling: one caps at 59, two at 49, three or more at 39.
-- Provider support for Groq, OpenAI, Anthropic, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
+- Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
+- Optional provider fallback chains, so you can try multiple APIs in order.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
 - Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review.
 - Exits with code 1 when critical findings exist, so it works as a pre-commit or CI gate.
@@ -29,6 +30,7 @@ Set one API key in your shell profile:
 export GROQ_API_KEY=...        # or:
 export OPENAI_API_KEY=...      # or:
 export ANTHROPIC_API_KEY=...   # or:
+export GEMINI_API_KEY=...      # or:
 export OPENROUTER_API_KEY=...
 ```
 
@@ -50,6 +52,7 @@ Create `.polish.json` in a project root. Everything is optional:
 {
   "provider": "anthropic",
   "model": "claude-sonnet-4-20250514",
+  "providers": ["gemini", "groq"],
   "include": ["src/**/*.{ts,tsx,css}"],
   "exclude": ["src/generated/**"],
   "rubric": ["usability", "craft", "accessibility"],
@@ -58,8 +61,9 @@ Create `.polish.json` in a project root. Everything is optional:
 }
 ```
 
-- `provider` - `openai`, `anthropic`, `openrouter`, or `groq`. Auto-detected from the env key that is present.
-- `model` - defaults are `gpt-4o-mini`, `claude-sonnet-4-20250514`, `openai/gpt-4o-mini` (OpenRouter), and `llama-3.3-70b-versatile` (Groq).
+- `provider` - `openai`, `anthropic`, `openrouter`, `groq`, or `gemini`. Auto-detected from the env key that is present.
+- `providers` - ordered fallback list. If set, polish tries each provider in order until one succeeds.
+- `model` - defaults are `gpt-4o-mini`, `claude-sonnet-4-20250514`, `openai/gpt-4o-mini` (OpenRouter), `llama-3.3-70b-versatile` (Groq), and `gemini-2.5-flash`.
 - `baseUrl` - override the API endpoint, for a proxy or self-hosted gateway.
 - `include` / `exclude` - glob patterns using `**`, `*`, `?`, and `{a,b}`. `node_modules` and `.git` are always skipped.
 - `rubric` - which rubric layers to use. `usability` (core heuristics), `craft` (typography, color, spacing, motion, components, writing), `accessibility` (contrast, keyboard, semantics, forms, touch targets, reduced motion). All three are on by default; pick a subset to cut token cost on large reviews.
