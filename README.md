@@ -151,11 +151,13 @@ node scripts/mcp-handshake.mjs   # manual MCP handshake test
 
 `node scripts/demo.mjs` runs the full pipeline (config → prompts → LLM call → scoring → verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx` — a component with accessibility blockers and design-system leaks — then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `29/100` → `96/100` and `8/8 findings fixed`.
 
-With an API key set, the same commands run against a live model, and the verdicts are real. A recorded live run on Groq (llama-3.3-70b-versatile) scored the before card `62/100` (0 critical, 3 serious, 2 moderate) and the after card `78/100` (0 critical, 1 serious, 3 moderate). Verdicts vary by model and run, so use a live run to judge your own code:
+With an API key set, the same commands run against a live model, and the verdicts are real. Recorded live runs on Groq (llama-3.3-70b-versatile) scored the card demo `62/100` before and `78/100` after, and the form demo `43/100` before and `66/100` after. Verdicts vary by model and run, so use a live run to judge your own code:
 
 ```bash
 polish demo/ProfileCard.before.jsx
 polish demo/ProfileCard.after.jsx demo/profile.css
+polish demo/SettingsForm.before.jsx
+polish demo/SettingsForm.after.jsx demo/settings-form.css
 ```
 
 ## Files
@@ -169,6 +171,7 @@ lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
 lib/scoring.js       cap-ladder scoring and summaries
+demo/                before/after demo components (ProfileCard, SettingsForm)
 test/                unit and integration tests
 scripts/             manual test scripts
 ```

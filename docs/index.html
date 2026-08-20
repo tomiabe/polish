@@ -323,8 +323,8 @@
     border-radius: var(--p-radius-md); padding: 12px 16px;
     flex: 1 1 180px; min-width: 0;
   }
-  .provider-pill .dot {
-    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  .provider-pill .plogo {
+    width: 20px; height: 20px; flex-shrink: 0;
   }
   .provider-pill .info { display: flex; flex-direction: column; min-width: 0; }
   .provider-pill .pname { font-weight: 600; font-size: 14px; line-height: 1.2; }
@@ -474,6 +474,76 @@
   }
 
   /* ============ live UI demo ============ */
+  .sample-switch {
+    display: flex; gap: 2px; background: var(--p-canvas-subtle);
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px;
+    margin-bottom: 16px;
+  }
+  .sample-switch button {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: 0; background: transparent; color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
+    padding: 7px 12px; border-radius: var(--p-radius-sm); cursor: pointer; min-height: 36px;
+  }
+  .sample-switch button:hover { color: var(--p-fg); }
+  .sample-switch button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .sample-switch i { font-size: 16px; }
+  .sample-panel { display: none; }
+  .sample-panel.active { display: block; }
+
+  /* form before: rough AI form */
+  .form-ai {
+    width: 100%; max-width: 380px; background: #f5f5f5; border-radius: 8px; padding: 16px;
+    font-size: 13px; color: #111;
+  }
+  .form-ai .form-ai-title { font-size: 22px; font-weight: 700; margin: 0 0 16px; }
+  .form-ai .form-ai-field { margin-bottom: 12px; }
+  .form-ai .form-ai-label { font-size: 13px; color: #666; margin-bottom: 4px; }
+  .form-ai .form-ai-input {
+    display: block; width: 100%; padding: 8px 10px;
+    border: 1px solid #ccc; border-radius: 4px; font: inherit; font-size: 13px;
+  }
+  .form-ai .form-ai-textarea { resize: vertical; min-height: 60px; }
+  .form-ai .form-ai-select { appearance: auto; }
+  .form-ai .form-ai-submit {
+    display: inline-block; padding: 10px 24px; background: #2563eb; color: #fff;
+    border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px;
+    text-align: center;
+  }
+
+  /* form after: polished token-based form */
+  .form-pol {
+    width: 100%; max-width: 380px; background: #ffffff; border: 1px solid #d1d5db;
+    border-radius: 8px; padding: 24px; font-size: 14px; color: #1a1d21;
+  }
+  .form-pol h3 { margin: 0 0 16px; font-size: 20px; font-weight: 700; }
+  .form-pol .form-pol-field { margin-bottom: 16px; }
+  .form-pol .form-pol-label {
+    display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; color: #1a1d21;
+  }
+  .form-pol .form-pol-hint { font-weight: 400; color: #6b7280; }
+  .form-pol .form-pol-input {
+    display: block; width: 100%; padding: 10px 12px;
+    border: 1px solid #d1d5db; border-radius: 6px; font: inherit; font-size: 14px;
+    color: #1a1d21; background: #fff;
+  }
+  .form-pol .form-pol-input:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+  .form-pol .form-pol-textarea { resize: vertical; min-height: 80px; }
+  .form-pol .form-pol-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+  }
+  .form-pol .form-pol-hint-text { margin: 4px 0 0; font-size: 13px; color: #6b7280; }
+  .form-pol .form-pol-submit {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 40px; padding: 0 20px; border-radius: 6px; border: 1px solid transparent;
+    background: #2563eb; color: #fff; font: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+  }
+  .form-pol .form-pol-submit:hover { background: #1d4ed8; }
+  .form-pol .form-pol-submit:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
   .live-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .live-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
   .live-toggle {
@@ -591,6 +661,7 @@
     .term-body { height: 400px; font-size: 12px; }
     .term-title { max-width: 46vw; }
     .live-panel { padding: 24px 16px; min-height: 0; }
+    .sample-switch { flex-wrap: wrap; }
     .to-top { right: 16px; bottom: 16px; }
   }
 </style>
@@ -793,12 +864,16 @@
     <div class="wrap">
       <h2>See it live</h2>
       <p class="sub">
-        The same card, rendered two ways. Toggle Before and After to see what polish changes,
+        Two real components, each reviewed by the same rubric. Toggle Before and After to see what polish changes,
         then flip to Code to inspect the source behind each version.
       </p>
       <div class="live-head">
+        <div class="sample-switch" role="group" aria-label="Sample component">
+          <button type="button" data-sample="card" aria-pressed="true"><i class="hgi-stroke hgi-user-circle"></i>Profile card</button>
+          <button type="button" data-sample="form" aria-pressed="false"><i class="hgi-stroke hgi-edit-01"></i>Settings form</button>
+        </div>
         <div class="live-toggles">
-          <div class="live-toggle" data-kind="state" role="group" aria-label="Card version">
+          <div class="live-toggle" data-kind="state" role="group" aria-label="Version">
             <button type="button" data-value="before" aria-pressed="true">Before</button>
             <button type="button" data-value="after" aria-pressed="false">After</button>
           </div>
@@ -808,47 +883,96 @@
           </div>
         </div>
       </div>
-      <div class="live-panel">
-        <div class="live-scene" id="live-ui-before">
-          <div class="ai-card">
-            <div class="ai-avatar">AM</div>
-            <h3>Alice Monroe</h3>
-            <p class="ai-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
-            <div class="ai-stats">
-              <span>128 posts</span>
-              <span>9.4k followers</span>
-            </div>
-            <div class="ai-actions">
-              <span class="ai-btn ai-primary">Message</span>
-              <span class="ai-btn ai-danger">Delete</span>
-              <span class="ai-btn ai-icon">&#8942;</span>
-            </div>
-          </div>
-          <p class="scene-note">Gradient background, hardcoded hex, divs as buttons, no focus styles, cramped 6px gaps.</p>
-          <p class="scene-verdict before"><i class="hgi-stroke hgi-alert-circle"></i>Live review: <b>62/100</b>, 3 serious, 2 moderate</p>
-        </div>
-        <div class="live-scene" id="live-ui-after" hidden>
-          <article class="pol-card">
-            <div class="pol-avatar" role="img" aria-label="Avatar of Alice Monroe">AM</div>
-            <div class="pol-body">
+
+      <!-- Profile card sample -->
+      <div class="sample-panel active" id="sample-card">
+        <div class="live-panel">
+          <div class="live-scene" id="live-ui-before">
+            <div class="ai-card">
+              <div class="ai-avatar">AM</div>
               <h3>Alice Monroe</h3>
-              <p class="pol-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
-              <div class="pol-stats">
+              <p class="ai-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
+              <div class="ai-stats">
                 <span>128 posts</span>
                 <span>9.4k followers</span>
               </div>
-              <div class="pol-actions">
-                <button class="pol-btn pol-primary" type="button">Message</button>
-                <button class="pol-btn pol-danger" type="button">Delete</button>
-                <button class="pol-btn pol-icon" type="button" aria-label="More actions">&#8942;</button>
+              <div class="ai-actions">
+                <span class="ai-btn ai-primary">Message</span>
+                <span class="ai-btn ai-danger">Delete</span>
+                <span class="ai-btn ai-icon">&#8942;</span>
               </div>
             </div>
-          </article>
-          <p class="scene-note">Tokens, real buttons, focus-visible rings, 4px spacing scale, accessible names.</p>
-          <p class="scene-verdict after"><i class="hgi-stroke hgi-checkmark-circle-01"></i>Live review: <b>78/100</b>, 1 serious, 3 moderate</p>
+            <p class="scene-note">Gradient background, hardcoded hex, divs as buttons, no focus styles, cramped 6px gaps.</p>
+            <p class="scene-verdict before"><i class="hgi-stroke hgi-alert-circle"></i>Live review: <b>62/100</b>, 3 serious, 2 moderate</p>
+          </div>
+          <div class="live-scene" id="live-ui-after" hidden>
+            <article class="pol-card">
+              <div class="pol-avatar" role="img" aria-label="Avatar of Alice Monroe">AM</div>
+              <div class="pol-body">
+                <h3>Alice Monroe</h3>
+                <p class="pol-bio">Product designer. Coffee powered. Ship small, ship often. Based in Lisbon.</p>
+                <div class="pol-stats">
+                  <span>128 posts</span>
+                  <span>9.4k followers</span>
+                </div>
+                <div class="pol-actions">
+                  <button class="pol-btn pol-primary" type="button">Message</button>
+                  <button class="pol-btn pol-danger" type="button">Delete</button>
+                  <button class="pol-btn pol-icon" type="button" aria-label="More actions">&#8942;</button>
+                </div>
+              </div>
+            </article>
+            <p class="scene-note">Tokens, real buttons, focus-visible rings, 4px spacing scale, accessible names.</p>
+            <p class="scene-verdict after"><i class="hgi-stroke hgi-checkmark-circle-01"></i>Live review: <b>78/100</b>, 1 serious, 3 moderate</p>
+          </div>
+          <div class="live-scene live-code" id="live-code-before" hidden><pre></pre></div>
+          <div class="live-scene live-code" id="live-code-after" hidden><pre></pre></div>
         </div>
-        <div class="live-scene live-code" id="live-code-before" hidden><pre></pre></div>
-        <div class="live-scene live-code" id="live-code-after" hidden><pre></pre></div>
+      </div>
+
+      <!-- Settings form sample -->
+      <div class="sample-panel" id="sample-form">
+        <div class="live-panel">
+          <div class="live-scene" id="live-ui-before-form">
+            <div class="form-ai">
+              <div class="form-ai-title">Project Settings</div>
+              <div class="form-ai-field"><div class="form-ai-label">Project name</div><input class="form-ai-input" placeholder="Enter project name" /></div>
+              <div class="form-ai-field"><div class="form-ai-label">Description</div><textarea class="form-ai-input form-ai-textarea" placeholder="What is this project about?" rows="2"></textarea></div>
+              <div class="form-ai-field"><div class="form-ai-label">Visibility</div><select class="form-ai-input form-ai-select"><option>Private</option><option>Team</option><option>Public</option></select></div>
+              <div class="form-ai-field"><div class="form-ai-label">Tags</div><input class="form-ai-input" placeholder="Comma-separated tags" /></div>
+              <div class="form-ai-submit">Save changes</div>
+            </div>
+            <p class="scene-note">Divs as labels, no &lt;form&gt;, div-as-submit, no validation, no loading state, hardcoded hex.</p>
+            <p class="scene-verdict before"><i class="hgi-stroke hgi-alert-circle"></i>Live review: <b>43/100</b>, 1 critical, 2 serious, 3 moderate</p>
+          </div>
+          <div class="live-scene" id="live-ui-after-form" hidden>
+            <form class="form-pol" noValidate>
+              <h3>Project Settings</h3>
+              <div class="form-pol-field">
+                <label class="form-pol-label" htmlFor="f-name">Project name</label>
+                <input id="f-name" class="form-pol-input" placeholder="Enter project name" required />
+              </div>
+              <div class="form-pol-field">
+                <label class="form-pol-label" htmlFor="f-desc">Description <span class="form-pol-hint">(optional)</span></label>
+                <textarea id="f-desc" class="form-pol-input form-pol-textarea" placeholder="What is this project about?" rows="2"></textarea>
+              </div>
+              <div class="form-pol-field">
+                <label class="form-pol-label" htmlFor="f-vis">Visibility</label>
+                <select id="f-vis" class="form-pol-input form-pol-select"><option>Private</option><option>Team</option><option>Public</option></select>
+                <p class="form-pol-hint-text">Only you can see this project.</p>
+              </div>
+              <div class="form-pol-field">
+                <label class="form-pol-label" htmlFor="f-tags">Tags</label>
+                <input id="f-tags" class="form-pol-input" placeholder="Comma-separated tags" />
+              </div>
+              <button class="form-pol-submit" type="button">Save changes</button>
+            </form>
+            <p class="scene-note">Proper &lt;label&gt; associations, &lt;form&gt; semantics, focus-visible, helper text, loading state, token-based styles.</p>
+            <p class="scene-verdict after"><i class="hgi-stroke hgi-checkmark-circle-01"></i>Live review: <b>66/100</b>, 0 critical, 1 serious, 6 moderate</p>
+          </div>
+          <div class="live-scene live-code" id="live-code-before-form" hidden><pre></pre></div>
+          <div class="live-scene live-code" id="live-code-after-form" hidden><pre></pre></div>
+        </div>
       </div>
     </div>
   </section>
@@ -858,7 +982,7 @@
       <h2>Watch it run</h2>
       <p class="sub">
         The whole pipeline in one terminal: config, prompts, the model call, scoring, and findings with fixes.
-        Recorded from a live run against the broken card with the default model on Groq.
+        Recorded from live runs against both demo components with the default model on Groq.
       </p>
       <div class="term" id="term">
         <div class="term-bar">
@@ -1002,23 +1126,23 @@
       </p>
       <div class="provider-grid" role="list" aria-label="Supported providers">
         <div class="provider-pill" role="listitem">
-          <span class="dot" style="background:#F55036"></span>
+          <svg class="plogo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#F55036"/></svg>
           <div class="info"><span class="pname">Groq</span><span class="pmodel">openai/gpt-oss-120b</span></div>
         </div>
         <div class="provider-pill" role="listitem">
-          <span class="dot" style="background:#10A37F"></span>
+          <svg class="plogo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="#10A37F" stroke-width="1.8"/><path d="M8 12c0-2.2 1.8-4 4-4s4 1.8 4 4-1.8 4-4 4" stroke="#10A37F" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.5" fill="#10A37F"/></svg>
           <div class="info"><span class="pname">OpenAI</span><span class="pmodel">gpt-4o-mini</span></div>
         </div>
         <div class="provider-pill" role="listitem">
-          <span class="dot" style="background:#D4A574"></span>
+          <svg class="plogo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3L4 21h3.5l1.5-4h6l1.5 4H20L12 3zm-1 11l2.5-6.5L16 14h-5z" fill="#D4A574"/></svg>
           <div class="info"><span class="pname">Anthropic</span><span class="pmodel">claude-sonnet-4</span></div>
         </div>
         <div class="provider-pill" role="listitem">
-          <span class="dot" style="background:#4285F4"></span>
+          <svg class="plogo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z" fill="#4285F4"/></svg>
           <div class="info"><span class="pname">Gemini</span><span class="pmodel">gemini-2.5-flash</span></div>
         </div>
         <div class="provider-pill" role="listitem">
-          <span class="dot" style="background:#6366F1"></span>
+          <svg class="plogo" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" stroke="#6366F1" stroke-width="1.8"/><path d="M8 12h8M12 8v8" stroke="#6366F1" stroke-width="1.8" stroke-linecap="round"/></svg>
           <div class="info"><span class="pname">OpenRouter</span><span class="pmodel">gpt-4o-mini</span></div>
         </div>
       </div>
@@ -1078,7 +1202,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 25,000 tokens, under a cent on most models.
+        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 29,000 tokens, under a cent on most models.
       </p>
     </div>
   </section>
@@ -1582,19 +1706,179 @@ export function ProfileCard({ user, onDelete, onMessage, compact = false }) {
       copyText(text).then(function () { showCopied(document.getElementById("term-copy")); });
     });
 
+    // ===== form source code =====
+    var FORM_BEFORE_SRC = `// SettingsForm.jsx: project settings form
+import { useState } from "react";
+
+export function SettingsForm({ project, onSave }) {
+  const [name, setName] = useState(project.name);
+  const [desc, setDesc] = useState(project.description);
+  const [visibility, setVisibility] = useState(project.visibility);
+  const [tags, setTags] = useState(project.tags.join(", "));
+
+  return (
+    <div className="form-container" style={{ padding: 16, background: "#f5f5f5", borderRadius: 8 }}>
+      <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 16, color: "#111" }}>
+        Project Settings
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Project name</div>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+          placeholder="Enter project name"
+          style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: 4 }} />
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Description</div>
+        <textarea value={desc} onChange={(e) => setDesc(e.target.value)}
+          placeholder="What is this project about?" rows={3}
+          style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: 4, resize: "vertical" }} />
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Visibility</div>
+        <select value={visibility} onChange={(e) => setVisibility(e.target.value)}
+          style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: 4 }}>
+          <option value="private">Private</option>
+          <option value="team">Team</option>
+          <option value="public">Public</option>
+        </select>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Tags</div>
+        <input type="text" value={tags} onChange={(e) => setTags(e.target.value)}
+          placeholder="Comma-separated tags"
+          style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: 4 }} />
+      </div>
+      <div className="save-btn"
+        onClick={() => onSave({ name, description: desc, visibility, tags: tags.split(",").map(t => t.trim()) })}
+        style={{ display: "inline-block", padding: "10px 24px", background: "#2563eb",
+          color: "#fff", borderRadius: 6, fontWeight: 600, cursor: "pointer", marginTop: 8 }}>
+        Save changes
+      </div>
+    </div>
+  );
+}`;
+    var FORM_AFTER_SRC = `// SettingsForm.jsx: project settings form
+import { useState } from "react";
+import "./settings-form.css";
+
+export function SettingsForm({ project, onSave }) {
+  const [name, setName] = useState(project.name);
+  const [desc, setDesc] = useState(project.description);
+  const [visibility, setVisibility] = useState(project.visibility);
+  const [tags, setTags] = useState(project.tags.join(", "));
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  function validate() {
+    const e = {};
+    if (!name.trim()) e.name = "Project name is required.";
+    if (name.trim().length > 64) e.name = "Name must be 64 characters or fewer.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!validate()) return;
+    setSaving(true);
+    try {
+      await onSave({ name: name.trim(), description: desc.trim(),
+        visibility, tags: tags.split(",").map(t => t.trim()).filter(Boolean) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="settings-form" onSubmit={handleSubmit} noValidate>
+      <h2 className="settings-form__title">Project Settings</h2>
+      <div className="settings-form__field">
+        <label className="settings-form__label" htmlFor="project-name">Project name</label>
+        <input id="project-name" className="settings-form__input" type="text"
+          value={name} onChange={(e) => setName(e.target.value)}
+          placeholder="Enter project name" required
+          aria-describedby={errors.name ? "name-error" : undefined}
+          aria-invalid={!!errors.name} />
+        {errors.name && <p className="settings-form__error" id="name-error" role="alert">{errors.name}</p>}
+      </div>
+      <div className="settings-form__field">
+        <label className="settings-form__label" htmlFor="project-desc">
+          Description <span className="settings-form__hint">(optional)</span>
+        </label>
+        <textarea id="project-desc" className="settings-form__input settings-form__textarea"
+          value={desc} onChange={(e) => setDesc(e.target.value)}
+          placeholder="What is this project about?" rows={3} />
+      </div>
+      <div className="settings-form__field">
+        <label className="settings-form__label" htmlFor="project-visibility">Visibility</label>
+        <select id="project-visibility" className="settings-form__input settings-form__select"
+          value={visibility} onChange={(e) => setVisibility(e.target.value)}>
+          <option value="private">Private</option>
+          <option value="team">Team</option>
+          <option value="public">Public</option>
+        </select>
+        <p className="settings-form__hint-text">
+          {visibility === "private" && "Only you can see this project."}
+          {visibility === "team" && "Anyone in your organization can view it."}
+          {visibility === "public" && "Anyone on the internet can view it."}
+        </p>
+      </div>
+      <div className="settings-form__field">
+        <label className="settings-form__label" htmlFor="project-tags">Tags</label>
+        <input id="project-tags" className="settings-form__input" type="text"
+          value={tags} onChange={(e) => setTags(e.target.value)}
+          placeholder="Comma-separated tags" />
+      </div>
+      <div className="settings-form__actions">
+        <button className="settings-form__btn settings-form__btn--primary"
+          type="submit" disabled={saving}>
+          {saving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
+    </form>
+  );
+}`;
+
     // ===== live UI demo =====
     var liveState = "before";
     var liveView = "ui";
+    var liveSample = "card";
     var livePanels = {
-      before: { ui: document.getElementById("live-ui-before"), code: document.getElementById("live-code-before") },
-      after: { ui: document.getElementById("live-ui-after"), code: document.getElementById("live-code-after") }
+      card: {
+        before: { ui: document.getElementById("live-ui-before"), code: document.getElementById("live-code-before") },
+        after: { ui: document.getElementById("live-ui-after"), code: document.getElementById("live-code-after") }
+      },
+      form: {
+        before: { ui: document.getElementById("live-ui-before-form"), code: document.getElementById("live-code-before-form") },
+        after: { ui: document.getElementById("live-ui-after-form"), code: document.getElementById("live-code-after-form") }
+      }
     };
+    // card sources already set above (BEFORE_SRC, AFTER_SRC)
     document.getElementById("live-code-before").querySelector("pre").textContent = BEFORE_SRC.trim();
     document.getElementById("live-code-after").querySelector("pre").textContent = AFTER_SRC.trim();
+    document.getElementById("live-code-before-form").querySelector("pre").textContent = FORM_BEFORE_SRC.trim();
+    document.getElementById("live-code-after-form").querySelector("pre").textContent = FORM_AFTER_SRC.trim();
+
+    // sample switcher
+    document.querySelectorAll(".sample-switch button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        liveSample = btn.dataset.sample;
+        document.querySelectorAll(".sample-switch button").forEach(function (b) {
+          b.setAttribute("aria-pressed", String(b === btn));
+        });
+        document.querySelectorAll(".sample-panel").forEach(function (p) {
+          p.classList.toggle("active", p.id === "sample-" + liveSample);
+        });
+        renderLive();
+      });
+    });
+
     function renderLive() {
-      Object.keys(livePanels).forEach(function (st) {
-        Object.keys(livePanels[st]).forEach(function (v) {
-          livePanels[st][v].hidden = !(st === liveState && v === liveView);
+      var sample = livePanels[liveSample];
+      if (!sample) return;
+      Object.keys(sample).forEach(function (st) {
+        Object.keys(sample[st]).forEach(function (v) {
+          sample[st][v].hidden = !(st === liveState && v === liveView);
         });
       });
     }
