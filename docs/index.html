@@ -160,6 +160,8 @@
   .hero {
     position: relative; isolation: isolate; overflow: hidden;
     padding: 88px 0 72px; text-align: center;
+    --hero-mx: 50%;
+    --hero-my: 26%;
   }
   .hero::before,
   .hero::after {
@@ -168,6 +170,7 @@
   .hero::before {
     width: 760px; height: 520px; left: 50%; top: -220px;
     background:
+      radial-gradient(circle at var(--hero-mx) var(--hero-my), rgba(94, 234, 212, 0.22), transparent 28%),
       radial-gradient(circle at 38% 42%, rgba(94, 234, 212, 0.24), transparent 34%),
       radial-gradient(circle at 68% 36%, rgba(33, 37, 41, 0.13), transparent 38%),
       radial-gradient(circle at 50% 70%, rgba(206, 212, 218, 0.26), transparent 52%);
@@ -176,18 +179,21 @@
   }
   .hero::after {
     inset: 0;
-    background-image: radial-gradient(var(--p-border-strong) 0.8px, transparent 0.8px);
+    background-image: radial-gradient(var(--p-border-strong) 0.95px, transparent 0.95px);
     background-size: 22px 22px;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.54), transparent 76%);
-    opacity: 0.36;
+    mask-image:
+      radial-gradient(circle at var(--hero-mx) var(--hero-my), rgba(0, 0, 0, 0.92), transparent 42%),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 82%);
+    opacity: 0.46;
   }
   [data-color-mode="dark"] .hero::before {
     background:
+      radial-gradient(circle at var(--hero-mx) var(--hero-my), rgba(94, 234, 212, 0.16), transparent 30%),
       radial-gradient(circle at 38% 42%, rgba(94, 234, 212, 0.15), transparent 34%),
       radial-gradient(circle at 68% 36%, rgba(248, 249, 250, 0.10), transparent 38%),
       radial-gradient(circle at 50% 70%, rgba(73, 80, 87, 0.24), transparent 52%);
   }
-  [data-color-mode="dark"] .hero::after { opacity: 0.22; }
+  [data-color-mode="dark"] .hero::after { opacity: 0.38; }
   @keyframes hero-liquid {
     0% { transform: translateX(-50%) translate3d(-3%, 0, 0) scale(0.98); }
     100% { transform: translateX(-50%) translate3d(4%, 18px, 0) scale(1.06); }
@@ -201,16 +207,32 @@
   }
   .lede .wordmark { font-family: var(--p-font-mono); font-weight: 600; color: var(--p-fg); }
   .hero-context {
+    position: relative; isolation: isolate;
     display: inline-flex; align-items: center; gap: 8px;
     margin: 18px auto 0; padding: 7px 12px;
     color: var(--p-fg-muted); background: color-mix(in srgb, var(--p-canvas) 78%, transparent);
-    border: 1px dashed var(--p-border-strong); border-radius: 999px;
+    border: 1px solid transparent; border-radius: 999px;
     font-family: var(--p-font-mono); font-size: 12px; line-height: 1.4;
     box-shadow: 0 4px 18px rgba(33, 37, 41, 0.04);
   }
   .hero-context::before {
     content: ""; width: 6px; height: 6px; flex: 0 0 6px;
     border-radius: 50%; background: #5eead4; box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.16);
+  }
+  .hero-context::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    border-radius: inherit; padding: 1px;
+    background-image: radial-gradient(var(--p-border-strong) 1px, transparent 1.2px);
+    background-size: 8px 8px;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0.82;
+    animation: pill-dots-spin 18s linear infinite;
+  }
+  @keyframes pill-dots-spin {
+    to { background-position: 16px -16px; }
   }
   .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .p-btn {
@@ -1330,6 +1352,45 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       if (choice === "system") applyResolved();
     });
     syncButtons();
+
+    // ===== hero cursor field =====
+    var hero = document.querySelector(".hero");
+    var heroMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    var finePointer = window.matchMedia("(pointer: fine)");
+    if (hero && !heroMotion.matches && finePointer.matches) {
+      var target = { x: 50, y: 26 };
+      var current = { x: 50, y: 26 };
+      var raf = 0;
+
+      function paintHeroField() {
+        current.x += (target.x - current.x) * 0.08;
+        current.y += (target.y - current.y) * 0.08;
+        hero.style.setProperty("--hero-mx", current.x.toFixed(2) + "%");
+        hero.style.setProperty("--hero-my", current.y.toFixed(2) + "%");
+
+        if (Math.abs(target.x - current.x) > 0.04 || Math.abs(target.y - current.y) > 0.04) {
+          raf = window.requestAnimationFrame(paintHeroField);
+        } else {
+          raf = 0;
+        }
+      }
+
+      function moveHeroField(event) {
+        var rect = hero.getBoundingClientRect();
+        target.x = Math.max(18, Math.min(82, ((event.clientX - rect.left) / rect.width) * 100));
+        target.y = Math.max(12, Math.min(66, ((event.clientY - rect.top) / rect.height) * 100));
+        if (!raf) raf = window.requestAnimationFrame(paintHeroField);
+      }
+
+      function settleHeroField() {
+        target.x = 50;
+        target.y = 26;
+        if (!raf) raf = window.requestAnimationFrame(paintHeroField);
+      }
+
+      hero.addEventListener("pointermove", moveHeroField);
+      hero.addEventListener("pointerleave", settleHeroField);
+    }
 
     // ===== mobile menu =====
     var burger = document.querySelector(".nav-burger");
