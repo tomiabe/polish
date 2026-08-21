@@ -3,19 +3,32 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>polish: a self-hosted design audit for UI code</title>
-<meta name="description" content="polish reviews your UI code against a layered rubric with your own LLM API key. No subscription. A 0 to 100 score with concrete fixes, as a CLI and an MCP server." />
+<title>polish: self-hosted design review for UI code</title>
+<meta name="description" content="polish audits UI code for usability, design craft, and accessibility with your own LLM API key. Get a 0-100 score, file-level findings, and concrete fixes from a CLI or MCP server." />
+<link rel="canonical" href="https://tomiabe.github.io/polish/" />
 <meta property="og:type" content="website" />
+<meta property="og:site_name" content="polish" />
 <meta property="og:url" content="https://tomiabe.github.io/polish/" />
-<meta property="og:title" content="polish_ - the design review you run, not subscribe to" />
-<meta property="og:description" content="Audit your UI code for usability, design craft, and accessibility. A 0-100 score with severity, exact file and line, and concrete fixes. Self-hosted, your own LLM key, no quotas." />
+<meta property="og:title" content="polish_ - self-hosted design review for UI code" />
+<meta property="og:description" content="Built for designers and engineers reviewing real UI code. Audit usability, craft, and accessibility with your own LLM key, no quotas, and concrete file-level fixes." />
 <meta property="og:image" content="https://tomiabe.github.io/polish/og-dark.png" />
+<meta property="og:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="polish_ - the design review you run, not subscribe to" />
-<meta name="twitter:description" content="Audit your UI code for usability, design craft, and accessibility. A 0-100 score with severity, exact file and line, and concrete fixes. Self-hosted, your own LLM key, no quotas." />
+<meta name="twitter:title" content="polish_ - self-hosted design review for UI code" />
+<meta name="twitter:description" content="Built for designers and engineers reviewing real UI code. Audit usability, craft, and accessibility with your own LLM key, no quotas, and concrete file-level fixes." />
 <meta name="twitter:image" content="https://tomiabe.github.io/polish/og-dark.png" />
+<meta name="twitter:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-R0VKNWVNLQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-R0VKNWVNLQ');
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212529'/%3E%3Cpath d='M8 11l6 5-6 5' stroke='%23f8f9fa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 21h7' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -229,10 +242,10 @@
     mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     mask-composite: exclude;
     opacity: 0.82;
-    animation: pill-dots-spin 18s linear infinite;
+    animation: pill-dots-drift 34s linear infinite;
   }
-  @keyframes pill-dots-spin {
-    to { background-position: 16px -16px; }
+  @keyframes pill-dots-drift {
+    to { background-position: 24px 0; }
   }
   .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .p-btn {

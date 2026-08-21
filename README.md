@@ -2,6 +2,10 @@
 
 `polish` is a self-hosted design review CLI and MCP server for UI code. It scores usability, craft, and accessibility from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
 
+Built for designers and engineers reviewing real UI code.
+
+See it live: https://tomiabe.github.io/polish/
+
 ## Why
 
 Hosted design review tools are useful, but they run on quotas and monthly limits. polish does the same job from a single Node script with zero dependencies. Point it at your UI files, it sends them to an LLM with a rubric, and returns a score plus findings with severity, category, file:line, and a concrete fix.
