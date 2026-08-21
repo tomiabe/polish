@@ -200,33 +200,16 @@
   }
   .lede .wordmark { font-family: var(--p-font-mono); font-weight: 600; color: var(--p-fg); }
   .hero-context {
-    position: relative; isolation: isolate;
     display: inline-flex; align-items: center; gap: 8px;
-    margin: 18px auto 0; padding: 8px 13px;
+    margin: 18px auto 0; padding: 7px 12px;
     color: var(--p-fg-muted); background: color-mix(in srgb, var(--p-canvas) 78%, transparent);
-    border: 1px solid color-mix(in srgb, var(--p-border-strong) 70%, transparent); border-radius: 999px;
+    border: 1px dashed var(--p-hero-chip-dash); border-radius: 999px;
     font-family: var(--p-font-mono); font-size: 12px; line-height: 1.4;
     box-shadow: 0 4px 18px rgba(33, 37, 41, 0.04);
   }
   .hero-context::before {
-    position: relative; z-index: 1;
     content: ""; width: 6px; height: 6px; flex: 0 0 6px;
     border-radius: 50%; background: #5eead4; box-shadow: 0 0 0 3px rgba(94, 234, 212, 0.16);
-  }
-  .hero-context .hero-context-text { position: relative; z-index: 1; }
-  .hero-context-frame {
-    position: absolute; inset: -3px; z-index: 0;
-    width: calc(100% + 6px); height: calc(100% + 6px);
-    pointer-events: none; overflow: visible;
-  }
-  .hero-context-frame rect {
-    fill: none; stroke: var(--p-hero-chip-dash); stroke-width: 1.7;
-    stroke-linecap: round; stroke-dasharray: 3.2 8;
-    animation: pill-border-move 26s linear infinite;
-    vector-effect: non-scaling-stroke;
-  }
-  @keyframes pill-border-move {
-    to { stroke-dashoffset: -112; }
   }
   .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .p-btn {
@@ -796,12 +779,7 @@
         <span class="wordmark">polish_</span> audits your UI code for usability, design craft, and accessibility
         with a self‑hosted Node script, your own API key, no bots in your repo, and no quotas.
       </p>
-      <p class="hero-context">
-        <span class="hero-context-text">Built for designers and engineers reviewing real UI code.</span>
-        <svg class="hero-context-frame" viewBox="0 0 100 26" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-          <rect x="1.5" y="1.5" width="97" height="23" rx="11.5" />
-        </svg>
-      </p>
+      <p class="hero-context">Built for designers and engineers reviewing real UI code.</p>
       <div class="cta">
         <a class="p-btn primary" href="#install"><i class="hgi-stroke hgi-console"></i>Get started</a>
         <a class="p-btn" href="#demo"><i class="hgi-stroke hgi-arrow-right-01"></i>See it run</a>
