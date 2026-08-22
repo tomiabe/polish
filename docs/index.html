@@ -257,7 +257,7 @@
   .finding .cat { font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted); }
   .sev {
     font-family: var(--p-font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap;
+    padding: 3px 8px; border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap; width: max-content;
   }
   .sev.critical { color: var(--p-sev-critical); background: var(--p-sev-critical-bg); }
   .sev.serious { color: var(--p-sev-serious); background: var(--p-sev-serious-bg); }
@@ -378,7 +378,7 @@
   }
   @media (max-width: 760px) {
     .provider-grid { gap: 8px; }
-    .provider-pill { flex: 1 1 calc(50% - 4px); }
+    .provider-pill { flex: 1 1 calc(50% - 4px); max-width: calc(50% - 4px); }
   }
 
   /* ============ mcp ============ */
@@ -432,6 +432,7 @@
   .diff-view {
     background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
     overflow-x: auto; box-shadow: var(--p-shadow);
+    max-height: 480px; overflow-y: auto;
   }
   .diff-view[hidden] { display: none; }
   .split-head { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--p-border); }
@@ -703,8 +704,11 @@
     .sim-row { flex-wrap: wrap; }
     .term-body { height: 400px; font-size: 12px; }
     .term-title { max-width: 46vw; }
+    .diff-view { max-height: 360px; }
     .live-panel { padding: 24px 16px; min-height: 0; }
+    .scene-verdict { flex-wrap: wrap; }
     .sample-switch { flex-wrap: wrap; }
+    .foot .credit { margin-left: 0; margin-right: auto; }
     .to-top { right: 16px; bottom: 16px; }
   }
 </style>
