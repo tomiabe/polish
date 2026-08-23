@@ -47,7 +47,7 @@ writeFileSync(configPath, JSON.stringify({ provider: "openai", model: "demo-mode
 
 const findingsPath = path.join(tmp, "findings.json");
 
-console.log(`polish demo — mock LLM on http://127.0.0.1:${port} (no API key needed)\n`);
+console.log(`polish demo - mock LLM on http://127.0.0.1:${port} (no API key needed)\n`);
 
 console.log(`── REVIEW BEFORE ── ${BEFORE}`);
 const before = await runPolish(["--config", configPath, BEFORE]);

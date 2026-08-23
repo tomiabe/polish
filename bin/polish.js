@@ -25,7 +25,7 @@ Usage:
 
 Options:
   --config <path>   Config file (default: ./.polish.json)
-  --json            Output raw findings JSON only
+  --json            Output machine-readable receipt JSON for review or verify
   --max-files <n>   Cap number of files (default 20)
   --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
   --help            Show this help
@@ -91,6 +91,12 @@ function printScore(score, summary) {
   }
 }
 
+function printReceipt(receipt) {
+  console.log(`\n${GREEN}Polish applied:${RESET} yes`);
+  console.log(`${DIM}Run: ${receipt.runId}${RESET}`);
+  console.log(`${DIM}Mode: ${receipt.mode}   Files: ${receipt.fileCount}${RESET}`);
+}
+
 function printFindings(findings) {
   for (const f of findings) {
     const color = SEV_COLOR[f.severity];
@@ -114,9 +120,13 @@ async function runReview(cfg, opts, rubric) {
   const list = files.map((f) => `  ${f.path} (${(f.content.length / 1024).toFixed(1)} KB)`).join("\n");
 
   if (opts.json) {
-    // Machine-readable mode: emit pure JSON, nothing else.
     const result = await reviewFiles(cfg, files);
-    console.log(JSON.stringify({ score: result.score, summary: result.assessment, findings: result.findings }, null, 2));
+    console.log(JSON.stringify({
+      score: result.score,
+      summary: result.assessment,
+      findings: result.findings,
+      receipt: result.receipt
+    }, null, 2));
     return;
   }
 
@@ -130,6 +140,7 @@ async function runReview(cfg, opts, rubric) {
 
   const result = await reviewFiles(cfg, files);
 
+  printReceipt(result.receipt);
   printScore(result.score, result);
   if (result.assessment) console.log(`\n${DIM}${result.assessment}${RESET}`);
   if (result.findings.length) printFindings(result.findings);
@@ -138,7 +149,7 @@ async function runReview(cfg, opts, rubric) {
   process.exitCode = result.findings.some((f) => f.severity === "critical") ? 1 : 0;
 }
 
-async function runVerify(cfg, findingsPath) {
+async function runVerify(cfg, findingsPath, json = false) {
   const previous = JSON.parse(await fs.readFile(findingsPath, "utf8"));
   const items = previous.findings ?? previous;
   if (!Array.isArray(items) || items.length === 0) {
@@ -157,14 +168,22 @@ async function runVerify(cfg, findingsPath) {
   }
   const verified = await verifyFiles(cfg, files, items);
 
-  for (const [i, v] of verified.entries()) {
+  if (json) {
+    console.log(JSON.stringify(verified, null, 2));
+    return;
+  }
+
+  printReceipt(verified.receipt);
+  printScore(verified.score, verified);
+
+  for (const [i, v] of verified.findings.entries()) {
     const id = v.id ?? `#${i + 1}`;
     const color = v.status === "fixed" ? GREEN : RED;
     console.log(`${color}${v.status === "fixed" ? "FIXED" : "STILL PRESENT"}${RESET} ${BOLD}${id}${RESET} ${v.title} (${v.file}:${v.line ?? "?"})`);
   }
-  const fixed = verified.filter((v) => v.status === "fixed").length;
-  console.log(`\n${BOLD}${fixed}/${verified.length}${RESET} findings fixed.`);
-  process.exitCode = verified.length - fixed > 0 ? 1 : 0;
+  const fixed = verified.findings.filter((v) => v.status === "fixed").length;
+  console.log(`\n${BOLD}${fixed}/${verified.findings.length}${RESET} findings fixed.`);
+  process.exitCode = verified.findings.length - fixed > 0 ? 1 : 0;
 }
 
 async function main() {
@@ -179,7 +198,7 @@ async function main() {
     if (opts.maxFileBytes) cfg.maxFileBytes = opts.maxFileBytes;
 
     if (opts.verify) {
-      await runVerify(cfg, opts.verify);
+      await runVerify(cfg, opts.verify, opts.json);
       return;
     }
     await runReview(cfg, opts, resolveRubric(cfg));

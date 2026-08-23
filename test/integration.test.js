@@ -62,24 +62,44 @@ test("CLI end-to-end against mock OpenAI server", async () => {
   const cwd = path.join(import.meta.dirname, "..");
   const env = { ...process.env, OPENAI_API_KEY: "test-key" };
   let stdout;
+  let jsonRun;
   try {
-    const r = await execFileP(
+    try {
+      const r = await execFileP(
+        process.execPath,
+        [path.join(cwd, "bin/polish.js"), "--config", configPath, "test/fixtures/*.jsx"],
+        { cwd, env }
+      );
+      stdout = r.stdout;
+    } catch (err) {
+      stdout = err.stdout;
+      assert.equal(err.code, 1, "critical findings exit non-zero");
+    }
+
+    jsonRun = await execFileP(
       process.execPath,
-      [path.join(cwd, "bin/polish.js"), "--config", configPath, "test/fixtures/*.jsx"],
+      [path.join(cwd, "bin/polish.js"), "--config", configPath, "--json", "test/fixtures/*.jsx"],
       { cwd, env }
     );
-    stdout = r.stdout;
   } catch (err) {
-    stdout = err.stdout;
-    assert.equal(err.code, 1, "critical findings exit non-zero");
+    stdout = err.stdout ?? stdout;
+    throw err;
   } finally {
     server.close();
   }
 
   const clean = stdout.replace(/\x1b\[[0-9;]*m/g, "");
+  assert.match(clean, /Polish applied: yes/, "receipt printed");
   assert.match(clean, /Score: 59\/100/, "critical cap applies");
   assert.match(clean, /Critical: 1/, "critical counted");
   assert.match(clean, /Destructive action without confirmation/, "title shown");
+
+  const receipt = JSON.parse(jsonRun.stdout);
+  assert.equal(receipt.score, 59);
+  assert.equal(receipt.receipt.polishApplied, true);
+  assert.equal(receipt.receipt.mode, "review");
+  assert.equal(receipt.receipt.fileCount, 1);
+  assert.deepEqual(receipt.receipt.filesReviewed, ["test/fixtures/BrokenCard.jsx"]);
 });
 
 test("CLI falls back from OpenAI to Gemini", async () => {

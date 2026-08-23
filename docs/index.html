@@ -689,11 +689,11 @@
   @media (max-width: 920px) {
     .nav-links { display: none; }
     .nav-burger { display: inline-flex; }
-    .layers, .mcp-grid { grid-template-columns: 1fr; }
+    .layers, .mcp-grid { grid-template-columns: repeat(2, 1fr); }
     .theme-switch .t-label { display: none; }
   }
   @media (max-width: 760px) {
-    .compare, .scoring { grid-template-columns: 1fr; }
+    .compare, .scoring, .layers, .mcp-grid { grid-template-columns: 1fr; }
     .stats { grid-template-columns: 1fr 1fr; }
     .finding { grid-template-columns: auto 1fr; }
     .finding .where { grid-column: 2; margin-top: -6px; }
@@ -1167,8 +1167,8 @@
       <h2>Install in two commands</h2>
       <p class="sub">
         Works with Groq, OpenAI, Anthropic, Gemini, OpenRouter, or any OpenAI-compatible endpoint.
-        One provider per run, or set a fallback chain and polish tries them in order.
-        Best for app UI reviews. Not a general code quality or backend linter.
+        Use one provider per run or set a fallback chain. Polish reviews app UI, including the words users see.
+        It is not a general code quality or backend linter.
       </p>
       <div class="provider-grid" role="list" aria-label="Supported providers">
         <div class="provider-pill" role="listitem" style="--provider-mark-bg:#f55036; --provider-mark-border:#f55036;">
@@ -1224,7 +1224,7 @@ export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / GEMINI 
             <pre>polish                                   <span class="c"># audit files matched by config globs</span>
 polish src/components src/pages/*.tsx    <span class="c"># or specific files</span>
 polish --verify findings.json           <span class="c"># re-check that fixes landed</span>
-polish --json                           <span class="c"># machine-readable, for CI</span>
+polish --json                           <span class="c"># machine-readable receipt, for CI or agents</span>
 polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
           </div>
           <p>Exits with code 1 when critical findings exist. Wire it into pre-commit or CI.</p>
@@ -1257,19 +1257,19 @@ polish --dry-run                        <span class="c"># preview cost, no API c
     <div class="wrap">
       <h2>Same engine, one more door: MCP</h2>
       <p class="sub">
-        polish also runs as an MCP server over stdio. Coding agents call the exact same engine as the CLI:
-        identical prompts, identical scoring. Terminal users and AI agents can never disagree.
+        Polish also runs as an MCP server over stdio. Coding agents call the same engine as the CLI,
+        with identical prompts, scoring, findings, and machine-readable receipts.
       </p>
       <div class="mcp-grid">
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-bot"></i></div>
           <h3>polish_review_files</h3>
-          <p>Review UI files by content. Returns score, counts, assessment, and findings with severity, category, file:line, and a fix.</p>
+          <p>Review UI files by content. Returns a score, counts, assessment, receipt, and findings with severity, category, file:line, and a fix.</p>
         </div>
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>
           <h3>polish_verify_fixes</h3>
-          <p>Re-check previous findings against updated content. Reports FIXED or STILL PRESENT per finding.</p>
+          <p>Re-check previous findings against updated content. Returns a new score and reports FIXED or STILL PRESENT per finding.</p>
         </div>
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-infinity-01"></i></div>

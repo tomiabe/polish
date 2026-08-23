@@ -17,7 +17,7 @@ const FILES_SCHEMA = {
   }
 };
 
-const PROVIDER_ENUM = ["openai", "anthropic", "openrouter", "groq"];
+const PROVIDER_ENUM = ["openai", "anthropic", "openrouter", "groq", "gemini"];
 
 const TOOLS = [
   {
@@ -40,7 +40,7 @@ const TOOLS = [
     name: "polish_verify_fixes",
     title: "polish verify fixes",
     description:
-      "Re-check previously reported polish findings against updated file contents. Returns fixed vs still_present per finding. Much cheaper than a full re-review. Use after applying fixes.",
+      "Re-check previously reported polish findings against updated file contents. Returns a new score, receipt, and fixed vs still_present per finding. Much cheaper than a full re-review. Use after applying fixes.",
     inputSchema: {
       type: "object",
       properties: {
@@ -90,8 +90,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return toResult(result);
     }
     if (name === "polish_verify_fixes") {
-      const findings = await verifyFiles(cfg, args.files ?? [], args.issues ?? []);
-      return toResult({ findings });
+      return toResult(await verifyFiles(cfg, args.files ?? [], args.issues ?? []));
     }
     if (name === "polish_usage") {
       return toResult({

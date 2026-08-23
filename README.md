@@ -1,6 +1,6 @@
 # polish
 
-`polish` is a self-hosted design review CLI and MCP server for UI code. It scores usability, craft, and accessibility from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
+`polish` is a self-hosted review CLI and MCP server for UI code. It scores usability, design craft, accessibility, and interface writing from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
 
 Built for designers and engineers reviewing real UI code.
 
@@ -12,12 +12,12 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 
 ## Features
 
-- Reviews against a layered rubric: usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility. The rubric is plain data, so it can be swapped for any design philosophy.
+- Reviews against a layered rubric: usability heuristics, design craft, interface writing, and accessibility. It checks headings, descriptions, labels, and helper text alongside visual and interaction code. The rubric is plain data, so it can be swapped for any design philosophy.
 - Cap-ladder scoring. Critical findings cap the ceiling: one caps at 59, two at 49, three or more at 39.
 - Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - Optional provider fallback chains, so you can try multiple APIs in order.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
-- Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review.
+- Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review and returns a new remaining-issues score.
 - Exits with code 1 when critical findings exist, so it works as a pre-commit or CI gate.
 
 ## Install
@@ -45,7 +45,7 @@ polish                                   # audit files matched by config globs
 polish src/components src/pages/*.tsx    # audit specific files or directories
 polish --verify findings.json           # re-check that previous findings are fixed
 polish --dry-run                        # preview what would be sent, no API call
-polish --json                           # machine-readable findings, for CI
+polish --json                           # machine-readable receipt + findings, for CI or agents
 ```
 
 ## Config
@@ -106,6 +106,8 @@ Rules work best when they are worded as things a model can check ("buttons show 
 - Criticals cap the ceiling: 1 gives max 59, 2 gives max 49, 3+ gives max 39.
 - The score never drops below 0.
 
+Every review run also emits a receipt with `polishApplied: true`, a run id, the score, and the files reviewed. In human mode, `polish` prints that receipt before the score. In `--json` mode, agents can read the same receipt without parsing the plain-text output.
+
 ## Verify mode
 
 ```bash
@@ -115,6 +117,8 @@ polish --verify findings.json
 ```
 
 Verify mode re-runs only the flagged findings against the current file contents and reports `FIXED` or `STILL PRESENT` for each one.
+It also emits a fresh score based on the findings that remain, plus the same receipt shape as a full review.
+Add `--json` to get the verify score, receipt, and statuses as machine-readable JSON.
 
 ## MCP server
 
@@ -153,7 +157,7 @@ node scripts/mcp-handshake.mjs   # manual MCP handshake test
 
 ## Demo
 
-`node scripts/demo.mjs` runs the full pipeline (config → prompts → LLM call → scoring → verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx` — a component with accessibility blockers and design-system leaks — then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `29/100` → `96/100` and `8/8 findings fixed`.
+`node scripts/demo.mjs` runs the full pipeline (config, prompts, LLM call, scoring, verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx`, a component with accessibility blockers and design-system leaks, then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `29/100` to `96/100` and `8/8 findings fixed`.
 
 With an API key set, the same commands run against a live model, and the verdicts are real. Recorded live runs on Groq (llama-3.3-70b-versatile) scored the card demo `62/100` before and `78/100` after, and the form demo `43/100` before and `66/100` after. Verdicts vary by model and run, so use a live run to judge your own code:
 

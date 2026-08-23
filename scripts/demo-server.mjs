@@ -125,7 +125,7 @@ function buildVerifyAnswer(user) {
   const file = pathMatch ? pathMatch[1] : "unknown";
   const isAfter = file.includes(".after.");
   // polish sends the previous findings either as a bare array or as
-  // { "findings": [...] } — slice the JSON between the prompt markers and
+  // { "findings": [...] } - slice the JSON between the prompt markers and
   // accept both shapes.
   const startMarker = "Previous findings to verify:";
   const start = user.indexOf(startMarker);
