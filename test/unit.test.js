@@ -9,19 +9,19 @@ test("score starts at 100 with no findings", () => {
   assert.equal(scoreFindings([]), 100);
 });
 
-test("critical caps at 59 with a single critical", () => {
+test("critical findings use the Polish weighted deduction", () => {
   const s = scoreFindings([{ severity: "critical" }, { severity: "moderate" }]);
-  assert.equal(s, 59);
+  assert.equal(s, 75);
 });
 
-test("two criticals cap at 49", () => {
+test("critical findings do not create a score ceiling", () => {
   const s = scoreFindings([{ severity: "critical" }, { severity: "critical" }]);
-  assert.equal(s, 49);
+  assert.equal(s, 56);
 });
 
-test("serious deducts 10, moderate 4", () => {
+test("serious deducts 9, moderate 3", () => {
   const s = scoreFindings([{ severity: "serious" }, { severity: "moderate" }]);
-  assert.equal(s, 86);
+  assert.equal(s, 88);
 });
 
 test("score never goes below 0", () => {

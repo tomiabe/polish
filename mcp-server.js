@@ -24,7 +24,7 @@ const TOOLS = [
     name: "polish_review_files",
     title: "polish review",
     description:
-      "Run a design/usability audit over UI files (React, Vue, Svelte, CSS). Reviews against a layered rubric - usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility - returns a 0-100 score (critical issues cap the ceiling: 1 caps at 59, 2 at 49, 3+ at 39) and findings with severity, category, rule, file:line and a concrete fix. Token cost is proportional to the code sent - prefer the highest-traffic screens, not whole codebases. Use on UI code before committing to catch accessibility and design problems.",
+      "Run a design/usability audit over UI files (React, Vue, Svelte, CSS). Reviews against a layered rubric - usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility - returns a 0-100 Polish score using weighted deductions and findings with severity, category, rule, file:line and a concrete fix. Token cost is proportional to the code sent - prefer the highest-traffic screens, not whole codebases. Use on UI code before committing to catch accessibility and design problems.",
     inputSchema: {
       type: "object",
       properties: {

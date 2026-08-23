@@ -13,7 +13,7 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 ## Features
 
 - Reviews against a layered rubric: usability heuristics, design craft, interface writing, and accessibility. It checks headings, descriptions, labels, and helper text alongside visual and interaction code. The rubric is plain data, so it can be swapped for any design philosophy.
-- Cap-ladder scoring. Critical findings cap the ceiling: one caps at 59, two at 49, three or more at 39.
+- Polish weighted scoring. Critical findings deduct 22, serious findings deduct 9, and moderate findings deduct 3. There is no severity ceiling.
 - Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - Optional provider fallback chains, so you can try multiple APIs in order.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
@@ -102,8 +102,7 @@ Rules work best when they are worded as things a model can check ("buttons show 
 
 ## Scoring
 
-- Start at 100. Each finding deducts: critical -25, serious -10, moderate -4.
-- Criticals cap the ceiling: 1 gives max 59, 2 gives max 49, 3+ gives max 39.
+- Start at 100. Each finding deducts according to Polish weights: critical -22, serious -9, moderate -3.
 - The score never drops below 0.
 
 Every review run also emits a receipt with `polishApplied: true`, a run id, the score, and the files reviewed. In human mode, `polish` prints that receipt before the score. In `--json` mode, agents can read the same receipt without parsing the plain-text output.
@@ -157,7 +156,7 @@ node scripts/mcp-handshake.mjs   # manual MCP handshake test
 
 ## Demo
 
-`node scripts/demo.mjs` runs the full pipeline (config, prompts, LLM call, scoring, verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx`, a component with accessibility blockers and design-system leaks, then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `29/100` to `96/100` and `8/8 findings fixed`.
+`node scripts/demo.mjs` runs the full pipeline (config, prompts, LLM call, scoring, verify) against a mock OpenAI-compatible server, so no API key is needed. It reviews `demo/ProfileCard.before.jsx`, a component with accessibility blockers and design-system leaks, then its fixed twin `demo/ProfileCard.after.jsx` (plus its stylesheet `demo/profile.css`), and finally verifies that the before-findings are resolved in the after code. The mock is deterministic: expect `39/100` to `97/100` and `8/8 findings fixed`.
 
 With an API key set, the same commands run against a live model, and the verdicts are real. Recorded live runs on Groq (llama-3.3-70b-versatile) scored the card demo `62/100` before and `78/100` after, and the form demo `43/100` before and `66/100` after. Verdicts vary by model and run, so use a live run to judge your own code:
 
@@ -178,7 +177,7 @@ lib/config.js        config loading, glob expansion, defaults
 lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
-lib/scoring.js       cap-ladder scoring and summaries
+lib/scoring.js       weighted scoring and summaries
 demo/                before/after demo components (ProfileCard, SettingsForm)
 test/                unit and integration tests
 scripts/             manual test scripts

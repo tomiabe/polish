@@ -1096,8 +1096,8 @@
     <div class="wrap">
       <h2>One number: is it ready to merge?</h2>
       <p class="sub">
-        Start at 100. Each finding deducts by severity, and criticals cap the ceiling. A score of 60 or above
-        always means zero critical issues. Try it below.
+        Start at 100. Each finding deducts by severity: 22 for critical, 9 for serious, and 3 for moderate.
+        Polish has no severity ceiling. Try the model below.
       </p>
       <div class="scoring">
         <div class="panel">
@@ -1144,17 +1144,16 @@
                 <tr><th>Severity</th><th>Deduction</th><th>Example</th></tr>
               </thead>
               <tbody>
-                <tr><td><span class="sev critical">critical</span></td><td>25</td><td>Unreachable by keyboard</td></tr>
-                <tr><td><span class="sev serious">serious</span></td><td>10</td><td>Hardcoded hex, no confirmation</td></tr>
-                <tr><td><span class="sev moderate">moderate</span></td><td>4</td><td>Magic radius, <code>transition: all</code></td></tr>
+                <tr><td><span class="sev critical">critical</span></td><td>22</td><td>Unreachable by keyboard</td></tr>
+                <tr><td><span class="sev serious">serious</span></td><td>9</td><td>Hardcoded hex, no confirmation</td></tr>
+                <tr><td><span class="sev moderate">moderate</span></td><td>3</td><td>Magic radius, <code>transition: all</code></td></tr>
               </tbody>
             </table>
           </div>
           <p class="cap" style="margin-top:16px">
-            <b>0 criticals</b> score as deducted<br />
-            <b>1 critical</b> ceiling 59<br />
-            <b>2 criticals</b> ceiling 49<br />
-            <b>3 or more</b> ceiling 39<br />
+            <b>critical</b> deducts 22<br />
+            <b>serious</b> deducts 9<br />
+            <b>moderate</b> deducts 3<br />
             The score never drops below 0.
           </p>
         </div>
@@ -1391,14 +1390,11 @@ polish --dry-run                        <span class="c"># preview cost, no API c
     };
 
     function compute() {
-      var raw = 100 - 25 * counts.critical - 10 * counts.serious - 4 * counts.moderate;
-      var cap = counts.critical >= 3 ? 39 : counts.critical === 2 ? 49 : counts.critical === 1 ? 59 : 100;
-      var score = Math.max(0, Math.min(raw, cap));
-      var verdict;
-      if (counts.critical === 0) verdict = "No criticals. Only deductions apply.";
-      else if (counts.critical === 1) verdict = "One critical caps the ceiling at 59.";
-      else if (counts.critical === 2) verdict = "Two criticals cap the ceiling at 49.";
-      else verdict = "Three or more criticals cap the ceiling at 39.";
+      var raw = 100 - 22 * counts.critical - 9 * counts.serious - 3 * counts.moderate;
+      var score = Math.max(0, raw);
+      var verdict = counts.critical === 0
+        ? "No critical findings. Weighted deductions apply."
+        : "Critical findings deduct 22 each. No severity ceiling applies.";
       els.score.textContent = String(score);
       els.verdict.textContent = verdict;
       els.score.style.color = score >= 60 ? "var(--p-fg)" : "var(--p-sev-critical)";

@@ -90,12 +90,12 @@ test("CLI end-to-end against mock OpenAI server", async () => {
 
   const clean = stdout.replace(/\x1b\[[0-9;]*m/g, "");
   assert.match(clean, /Polish applied: yes/, "receipt printed");
-  assert.match(clean, /Score: 59\/100/, "critical cap applies");
+  assert.match(clean, /Score: 69\/100/, "weighted deductions apply");
   assert.match(clean, /Critical: 1/, "critical counted");
   assert.match(clean, /Destructive action without confirmation/, "title shown");
 
   const receipt = JSON.parse(jsonRun.stdout);
-  assert.equal(receipt.score, 59);
+  assert.equal(receipt.score, 69);
   assert.equal(receipt.receipt.polishApplied, true);
   assert.equal(receipt.receipt.mode, "review");
   assert.equal(receipt.receipt.fileCount, 1);
@@ -168,6 +168,6 @@ test("CLI falls back from OpenAI to Gemini", async () => {
   }
 
   const clean = stdout.replace(/\x1b\[[0-9;]*m/g, "");
-  assert.match(clean, /Score: 59\/100/, "fallback result scored");
+  assert.match(clean, /Score: 69\/100/, "fallback result scored");
   assert.match(clean, /Clickable div is not keyboard accessible|Destructive action without confirmation/, "gemini findings shown");
 });
