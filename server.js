@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { expandGlobs, DEFAULT_CONFIG } from "./lib/config.js";
 import { reviewFiles, resolveRubric } from "./lib/review.js";
 
@@ -10,17 +10,32 @@ const DOCS = path.resolve("docs");
 const TMP = path.resolve(".preview-cache");
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 50_000;
-const ALLOWED_EXTENSIONS = new Set([".tsx", ".jsx", ".vue", ".svelte", ".css", ".html"]);
+const MAX_BODY_BYTES = 4_096;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1_000;
+const RATE_LIMIT_MAX = 10;
+const rateLimits = new Map();
+const DEFAULT_ALLOWED_ORIGINS = new Set([
+  "https://polish.tomiabe.com",
+  "https://www.polish.tomiabe.com",
+  "https://tomiabe.github.io",
+  "http://polish.tomiabe.com",
+  "http://www.polish.tomiabe.com",
+  "http://localhost:3939",
+  "http://localhost:3000"
+]);
 
 // ── helpers ──
 
 function parseGitHubUrl(url) {
   try {
     const u = new URL(url);
-    if (u.hostname !== "github.com") return null;
+    if (u.protocol !== "https:" || u.hostname.toLowerCase() !== "github.com") return null;
     const parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
     if (parts.length < 2) return null;
-    return { owner: parts[0], repo: parts[1] };
+    const owner = parts[0];
+    const repo = parts[1].replace(/\.git$/, "");
+    if (!/^[A-Za-z0-9_.-]+$/.test(owner) || !/^[A-Za-z0-9_.-]+$/.test(repo)) return null;
+    return { owner, repo };
   } catch {
     return null;
   }
@@ -28,15 +43,49 @@ function parseGitHubUrl(url) {
 
 function shallowClone(owner, repo, dest) {
   const url = `https://github.com/${owner}/${repo}.git`;
-  try {
-    execSync(`git clone --depth 1 --single-branch --no-tags "${url}" "${dest}"`, {
-      timeout: 30_000,
-      stdio: "pipe"
-    });
-  } catch (err) {
-    const detail = err.stderr?.toString().trim() || err.message;
+  const result = spawnSync("git", ["clone", "--depth", "1", "--single-branch", "--no-tags", url, dest], {
+    timeout: 30_000,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  if (result.error || result.status !== 0) {
+    const detail = result.stderr?.trim() || result.error?.message || "clone failed";
     throw new Error(`GitHub clone failed: ${detail}`);
   }
+}
+
+function getAllowedOrigins() {
+  const configured = process.env.PREVIEW_ALLOWED_ORIGINS
+    ?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  return new Set(configured?.length ? configured : DEFAULT_ALLOWED_ORIGINS);
+}
+
+function corsHeaders(req) {
+  const origin = req.headers.origin;
+  const headers = { "vary": "Origin" };
+  if (origin && getAllowedOrigins().has(origin)) headers["access-control-allow-origin"] = origin;
+  return headers;
+}
+
+function getClientKey(req) {
+  return req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+}
+
+function checkRateLimit(req) {
+  const now = Date.now();
+  for (const [key, entry] of rateLimits) {
+    if (now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) rateLimits.delete(key);
+  }
+  const key = getClientKey(req);
+  const entry = rateLimits.get(key);
+  if (!entry || now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) {
+    rateLimits.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= RATE_LIMIT_MAX;
 }
 
 async function readFiles(paths) {
@@ -57,7 +106,8 @@ function jsonReply(res, status, data) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
     "content-type": "application/json",
-    "access-control-allow-origin": "*"
+    "cache-control": "no-store",
+    ...corsHeaders(res.req)
   });
   res.end(body);
 }
@@ -65,10 +115,16 @@ function jsonReply(res, status, data) {
 // ── API handler ──
 
 async function handlePreview(req, res) {
+  res.req = req;
   // CORS preflight
   if (req.method === "OPTIONS") {
+    const origin = req.headers.origin;
+    if (origin && !getAllowedOrigins().has(origin)) {
+      res.writeHead(403, corsHeaders(req));
+      return res.end();
+    }
     res.writeHead(204, {
-      "access-control-allow-origin": "*",
+      ...corsHeaders(req),
       "access-control-allow-methods": "POST, OPTIONS",
       "access-control-allow-headers": "content-type"
     });
@@ -79,8 +135,17 @@ async function handlePreview(req, res) {
     return jsonReply(res, 405, { error: "Method not allowed" });
   }
 
+  if (!checkRateLimit(req)) {
+    return jsonReply(res, 429, { error: "Preview limit reached. Try again in a few minutes." });
+  }
+
   let body = "";
-  for await (const chunk of req) body += chunk;
+  for await (const chunk of req) {
+    body += chunk;
+    if (Buffer.byteLength(body) > MAX_BODY_BYTES) {
+      return jsonReply(res, 413, { error: "Request is too large." });
+    }
+  }
 
   let url;
   try {
@@ -107,7 +172,10 @@ async function handlePreview(req, res) {
     shallowClone(repo.owner, repo.repo, dest);
 
     // 2. Find UI files — skip generated/build output directories
-    const EXCLUDE_DIRS = ["dist", "build", ".next", ".cache", "out", "public/admin"];
+    const EXCLUDE_DIRS = [
+      ".git", ".cache", ".next", ".nuxt", ".vercel", "build", "coverage", "dist",
+      "node_modules", "out", "public/admin", "storybook-static", "vendor"
+    ];
     const globs = DEFAULT_CONFIG.include;
     const allPaths = (await expandGlobs(globs, dest)).filter((p) => {
       const rel = path.relative(dest, p);
@@ -174,13 +242,21 @@ async function handlePreview(req, res) {
     else if (result.score >= 60) verdict = "Decent shape. Some findings worth addressing.";
     else verdict = "Several issues found. Consider running the full review.";
 
+    const receipt = {
+      ...result.receipt,
+      filesReviewed: files.map((file) => file.path.replace(dest + "/", "")),
+      candidateFileCount: allPaths.length,
+      selection: "representative source-file sample"
+    };
+
     return jsonReply(res, 200, {
       repo: repoKey,
       score: result.score,
       verdict,
       fileCount: files.length,
+      candidateFileCount: allPaths.length,
       findings,
-      receipt: result.receipt
+      receipt
     });
   } catch (err) {
     console.error("Preview error:", err.message);
