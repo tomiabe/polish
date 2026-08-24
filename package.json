@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node --test",
-    "mcp": "node mcp-server.js"
+    "mcp": "node mcp-server.js",
+    "preview": "node server.js"
   },
   "engines": {
     "node": ">=18"

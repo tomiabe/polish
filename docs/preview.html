@@ -592,29 +592,27 @@
     document.getElementById("run-btn").disabled = true;
 
     try {
-      // TODO: Replace with real backend call
-      // For now, simulate a preview with mock data
-      await new Promise(function (resolve) { setTimeout(resolve, 3000); });
+      var res = await fetch("/api/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: raw })
+      });
 
       clearInterval(loadingTimer);
       hideLoading();
 
-      // Mock result — replace with actual API response
-      renderResults({
-        repo: repo.owner + "/" + repo.repo,
-        score: Math.floor(Math.random() * 40) + 45,
-        verdict: "Preview score based on up to 5 UI files.",
-        fileCount: Math.floor(Math.random() * 3) + 2,
-        findings: [
-          { severity: "serious", category: "[H1]", message: "No loading state for interactive actions. Clicking gives no feedback.", file: "src/components/Button.tsx", line: 14 },
-          { severity: "moderate", category: "[C1]", message: "Hardcoded hex color #3b82f6 should use a design token.", file: "src/styles/theme.css", line: 7 },
-          { severity: "moderate", category: "[W3]", message: "Helper text is vague. Replace 'Enter value' with specific guidance.", file: "src/components/Input.tsx", line: 22 }
-        ]
-      });
+      var data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+
+      renderResults(data);
     } catch (err) {
       clearInterval(loadingTimer);
       hideLoading();
-      showError("Something went wrong. Please try again.");
+      showError("Could not reach the server. Make sure the preview server is running.");
     }
 
     document.getElementById("run-btn").disabled = false;
