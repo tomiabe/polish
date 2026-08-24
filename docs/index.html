@@ -736,6 +736,7 @@
       <a href="#scoring">Scoring</a>
       <a href="#install">Install</a>
       <a href="#mcp">MCP</a>
+      <a href="#agents">Agents</a>
     </div>
     <div class="nav-right">
       <div class="theme-switch" role="group" aria-label="Color theme">
@@ -760,6 +761,7 @@
     <a href="#scoring">Scoring</a>
     <a href="#install">Install</a>
     <a href="#mcp">MCP</a>
+    <a href="#agents">Agents</a>
   </div>
 </nav>
 
@@ -1276,10 +1278,37 @@ polish --dry-run                        <span class="c"># preview cost, no API c
           <h3>polish_usage</h3>
           <p>Usage status: always unlimited. Self-hosted means no quota and no subscription, just your own key.</p>
         </div>
+      </div>    </div>
+  </section>
+
+  <section id="agents">
+    <div class="wrap">
+      <h2>Agent-ready by default</h2>
+      <p class="sub">
+        Give your coding agent a repeatable UI review loop. Run Polish, read the receipt,
+        apply the highest-impact fixes, then verify the result.
+      </p>
+      <div class="layers">
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-console"></i></div>
+          <h3>polish init-agent</h3>
+          <p>Writes <code>AGENTS.md</code> into your repo. It teaches agents when to review UI changes, how to read a receipt with <code>polishApplied: true</code>, and how to verify fixes afterward.</p>
+        </div>
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-sparkles"></i></div>
+          <h3>Machine-readable receipts</h3>
+          <p>Every run emits a receipt with a run ID, score, files reviewed, and category breakdown. <code>--json</code> outputs the full receipt for CI pipelines and agent loops.</p>
+        </div>
+        <div class="layer">
+          <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>
+          <h3>Verify and close the loop</h3>
+          <p>After fixes, <code>polish --verify</code> re-checks only the previous findings and returns a fresh score. The agent reads the result and stops when all findings are resolved.</p>
+        </div>
       </div>
     </div>
   </section>
 </main>
+
 
 <footer>
   <div class="wrap foot">
