@@ -95,7 +95,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "polish_usage") {
       return toResult({
         quota: "unlimited",
-        message: "polish is self-hosted - no subscription. Uses your own API key (GROQ_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / OPENROUTER_API_KEY)."
+        message: "polish is self-hosted - no subscription. Uses your own API key (GROQ_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENROUTER_API_KEY)."
       });
     }
     return toError(`Unknown tool: ${name}`);

@@ -1,7 +1,7 @@
 {
   "name": "polish",
   "version": "0.1.0",
-  "description": "Design/usability audit CLI for UI code. Layered rubric-based LLM review with weighted scoring.",
+  "description": "Self-hosted UI review CLI and MCP server for usability, craft, accessibility, and interface writing.",
   "type": "module",
   "bin": {
     "polish": "./bin/polish.js"

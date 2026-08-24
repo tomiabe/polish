@@ -8,7 +8,7 @@ See it live: https://tomiabe.github.io/polish/
 
 ## Why
 
-Hosted design review tools are useful, but they run on quotas and monthly limits. polish does the same job from a single Node script with zero dependencies. Point it at your UI files, it sends them to an LLM with a rubric, and returns a score plus findings with severity, category, file:line, and a concrete fix.
+Hosted design review tools are useful, but they run on quotas and monthly limits. polish keeps the review loop local, using your own API key and a small Node CLI. Point it at your UI files, it sends them to an LLM with a rubric, and returns a score plus findings with severity, category, file:line, and a concrete fix.
 
 ## Features
 
@@ -125,9 +125,9 @@ Add `--json` to get the verify score, receipt, and statuses as machine-readable 
 
 polish also runs as an MCP server over stdio, so AI agents can call it as tools. It exposes:
 
-- `polish_review_files` - review UI files by content, returns score and findings
-- `polish_verify_fixes` - re-check findings against updated content
-- `polish_usage` - usage status, always unlimited
+- `polish_review_files` - review UI files by content, returns a score, receipt, and findings
+- `polish_verify_fixes` - re-check findings against updated content, returning a new score, receipt, and statuses
+- `polish_usage` - usage status, always unlimited and self-hosted
 
 Register it in any MCP-capable client. For opencode, in `~/.config/opencode/opencode.json`:
 
