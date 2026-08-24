@@ -106,9 +106,13 @@ async function handlePreview(req, res) {
     await fs.mkdir(TMP, { recursive: true });
     shallowClone(repo.owner, repo.repo, dest);
 
-    // 2. Find UI files
+    // 2. Find UI files — skip generated/build output directories
+    const EXCLUDE_DIRS = ["dist", "build", ".next", ".cache", "out", "public/admin"];
     const globs = DEFAULT_CONFIG.include;
-    const allPaths = await expandGlobs(globs, dest);
+    const allPaths = (await expandGlobs(globs, dest)).filter((p) => {
+      const rel = path.relative(dest, p);
+      return !EXCLUDE_DIRS.some((d) => rel.startsWith(d + "/") || rel.includes("/" + d + "/"));
+    });
 
     if (allPaths.length === 0) {
       return jsonReply(res, 200, {
