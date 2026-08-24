@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en" data-color-mode="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>polish: preview a public repo</title>
+<meta name="description" content="Paste a public GitHub repository URL and get a lightweight Polish review: score, findings, and a path to the full self-hosted tool." />
+<link rel="canonical" href="https://tomiabe.github.io/polish/preview" />
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212529'/%3E%3Cpath d='M8 11l6 5-6 5' stroke='%23f8f9fa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 21h7' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@primer/css@22.3.0/dist/primer.min.css" />
+<link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+<style>
+  :root {
+    --p-font-sans: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --p-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --p-radius-sm: 6px;
+    --p-radius-md: 8px;
+    --p-radius-lg: 12px;
+    --p-sev-critical: #d92d20;
+    --p-sev-serious: #b54708;
+    --p-sev-moderate: #1570ef;
+  }
+  [data-color-mode="light"] {
+    color-scheme: light;
+    --p-canvas: #f8f9fa;
+    --p-canvas-subtle: #e9ecef;
+    --p-border: #dee2e6;
+    --p-border-strong: #ced4da;
+    --p-fg: #212529;
+    --p-fg-muted: #6c757d;
+    --p-emphasis: #212529;
+    --p-emphasis-fg: #f8f9fa;
+    --p-link: #343a40;
+    --p-focus: #495057;
+    --p-shadow: 0 1px 2px rgba(33, 37, 41, 0.06), 0 4px 12px rgba(33, 37, 41, 0.06);
+    --p-chip-bg: #e9ecef;
+    --p-sev-critical-bg: #fef3f2;
+    --p-sev-serious-bg: #fffaeb;
+    --p-sev-moderate-bg: #eff8ff;
+  }
+  [data-color-mode="dark"] {
+    color-scheme: dark;
+    --p-canvas: #212529;
+    --p-canvas-subtle: #343a40;
+    --p-border: #495057;
+    --p-border-strong: #6c757d;
+    --p-fg: #f8f9fa;
+    --p-fg-muted: #adb5bd;
+    --p-emphasis: #f8f9fa;
+    --p-emphasis-fg: #212529;
+    --p-link: #dee2e6;
+    --p-focus: #adb5bd;
+    --p-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --p-chip-bg: #495057;
+    --p-sev-critical-bg: rgba(217, 45, 32, 0.14);
+    --p-sev-serious-bg: rgba(181, 71, 8, 0.14);
+    --p-sev-moderate-bg: rgba(21, 112, 239, 0.14);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--p-font-sans);
+    background: var(--p-canvas);
+    color: var(--p-fg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 200ms ease-out, color 200ms ease-out;
+  }
+  a { color: var(--p-link); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--p-fg); }
+  :focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; border-radius: 2px; }
+  ::selection { background: var(--p-border-strong); color: var(--p-fg); }
+  code, pre, .mono { font-family: var(--p-font-mono); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    body, * { transition: none !important; }
+  }
+
+  /* nav */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--p-canvas);
+    border-bottom: 1px solid var(--p-border);
+  }
+  .nav-inner { display: flex; align-items: center; gap: 24px; min-height: 60px; }
+  .brand { font-family: var(--p-font-mono); font-weight: 600; font-size: 18px; color: var(--p-fg); text-decoration: none; }
+  .brand:hover, .brand:active { color: var(--p-fg); text-decoration: none; }
+  .brand .cursor { color: var(--p-border-strong); }
+  .nav-links { display: flex; gap: 4px; margin-left: 8px; }
+  .nav-links a {
+    color: var(--p-fg-muted); text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 8px 12px; border-radius: var(--p-radius-sm);
+  }
+  .nav-links a:hover { color: var(--p-fg); background: var(--p-canvas-subtle); text-decoration: none; }
+  .nav-links a.active { color: var(--p-fg); background: var(--p-canvas-subtle); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .theme-switch {
+    display: flex; gap: 2px; background: var(--p-canvas-subtle);
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px;
+  }
+  .theme-switch button {
+    display: flex; align-items: center; gap: 6px;
+    border: 0; background: transparent; color: var(--p-fg-muted);
+    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
+    padding: 7px 10px; border-radius: var(--p-radius-sm); cursor: pointer;
+    min-height: 36px;
+  }
+  .theme-switch button:hover { color: var(--p-fg); }
+  .theme-switch button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
+  .theme-switch i { font-size: 16px; }
+  .theme-switch .t-label { display: inline; }
+  .nav-burger {
+    display: none; border: 1px solid var(--p-border); background: var(--p-canvas-subtle);
+    color: var(--p-fg); border-radius: var(--p-radius-md); min-height: 40px; min-width: 40px;
+    align-items: center; justify-content: center; cursor: pointer; font-size: 18px;
+  }
+  .nav-menu {
+    display: none; border-top: 1px solid var(--p-border); background: var(--p-canvas);
+    padding: 8px 24px 16px;
+  }
+  .nav-menu a {
+    display: block; padding: 12px 8px; color: var(--p-fg); text-decoration: none;
+    font-size: 15px; font-weight: 500; border-bottom: 1px solid var(--p-border);
+  }
+  .nav-menu a:last-child { border-bottom: 0; }
+  .nav-menu.open { display: block; }
+
+  /* main */
+  .preview-hero {
+    padding: 64px 0 0; text-align: center;
+  }
+  .preview-hero h1 {
+    font-size: clamp(28px, 4vw, 40px); line-height: 1.15; letter-spacing: -0.02em;
+    font-weight: 700; margin: 0 auto; max-width: 600px;
+  }
+  .preview-hero .lede {
+    max-width: 520px; margin: 16px auto 0; color: var(--p-fg-muted); font-size: 17px;
+  }
+
+  /* input form */
+  .input-card {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    box-shadow: var(--p-shadow); padding: 24px; margin-top: 32px;
+  }
+  .input-row {
+    display: flex; gap: 10px; align-items: stretch;
+  }
+  .input-row input {
+    flex: 1;
+    font-family: var(--p-font-mono); font-size: 14px;
+    padding: 0 16px; min-height: 48px;
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    background: var(--p-canvas-subtle); color: var(--p-fg);
+  }
+  .input-row input::placeholder { color: var(--p-fg-muted); }
+  .input-row input:focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; }
+  .run-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--p-font-sans); font-size: 15px; font-weight: 600;
+    padding: 0 24px; min-height: 48px; border-radius: var(--p-radius-md);
+    border: 1px solid var(--p-emphasis); background: var(--p-emphasis); color: var(--p-emphasis-fg);
+    cursor: pointer; white-space: nowrap;
+  }
+  .run-btn:hover { opacity: 0.88; }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .run-btn i { font-size: 18px; }
+  .privacy-note {
+    margin-top: 12px; font-size: 13px; color: var(--p-fg-muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .privacy-note i { font-size: 15px; flex-shrink: 0; }
+
+  /* loading */
+  .loading {
+    display: none; text-align: center; padding: 48px 0;
+  }
+  .loading.active { display: block; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--p-border);
+    border-top-color: var(--p-fg); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: var(--p-fg-muted); font-size: 15px; }
+
+  /* error */
+  .error-msg {
+    display: none;
+    background: var(--p-sev-critical-bg); border: 1px solid var(--p-sev-critical);
+    border-radius: var(--p-radius-md); padding: 14px 16px; margin-top: 16px;
+    font-size: 14px; color: var(--p-sev-critical);
+  }
+  .error-msg.active { display: flex; align-items: center; gap: 8px; }
+  .error-msg i { font-size: 18px; flex-shrink: 0; }
+
+  /* results */
+  .results { display: none; margin-top: 32px; }
+  .results.active { display: block; }
+
+  .result-score-card {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    padding: 28px; box-shadow: var(--p-shadow); text-align: center; margin-bottom: 20px;
+  }
+  .result-score-card .repo-name {
+    font-family: var(--p-font-mono); font-size: 13px; color: var(--p-fg-muted);
+    margin-bottom: 8px; word-break: break-all;
+  }
+  .result-score-card .score {
+    font-family: var(--p-font-mono); font-size: 64px; font-weight: 600; line-height: 1.1;
+  }
+  .result-score-card .score span { font-size: 22px; color: var(--p-fg-muted); }
+  .result-score-card .verdict {
+    font-size: 15px; color: var(--p-fg-muted); margin-top: 8px;
+  }
+  .result-bar {
+    height: 8px; border-radius: 99px; background: var(--p-border); margin-top: 20px; overflow: hidden;
+  }
+  .result-bar i { display: block; height: 100%; border-radius: 99px; background: var(--p-fg); }
+  .result-meta {
+    display: flex; justify-content: center; gap: 20px; margin-top: 16px;
+    font-size: 13px; color: var(--p-fg-muted);
+  }
+
+  .result-findings { margin-bottom: 24px; }
+  .result-findings h3 { font-size: 16px; font-weight: 600; margin: 0 0 12px; }
+  .result-finding {
+    background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    padding: 12px 14px; font-size: 14px; display: grid;
+    grid-template-columns: auto auto 1fr auto; gap: 10px; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .result-finding .where {
+    font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted);
+    white-space: nowrap;
+  }
+  .result-finding .cat {
+    font-family: var(--p-font-mono); font-size: 11px; color: var(--p-fg-muted);
+  }
+  .sev {
+    font-family: var(--p-font-mono); font-size: 10px; font-weight: 600; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 99px; letter-spacing: 0.04em; white-space: nowrap; width: max-content;
+  }
+  .sev.critical { color: var(--p-sev-critical); background: var(--p-sev-critical-bg); }
+  .sev.serious { color: var(--p-sev-serious); background: var(--p-sev-serious-bg); }
+  .sev.moderate { color: var(--p-sev-moderate); background: var(--p-sev-moderate-bg); }
+
+  /* CTA card */
+  .cta-card {
+    background: var(--p-canvas-subtle); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
+    padding: 28px; text-align: center;
+  }
+  .cta-card h3 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+  .cta-card p { color: var(--p-fg-muted); font-size: 15px; margin: 0 0 20px; max-width: 480px; margin-left: auto; margin-right: auto; }
+  .cta-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .p-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--p-font-sans); font-size: 15px; font-weight: 600;
+    padding: 0 20px; min-height: 44px; border-radius: var(--p-radius-md);
+    border: 1px solid var(--p-border); background: var(--p-canvas-subtle); color: var(--p-fg);
+    cursor: pointer; text-decoration: none;
+  }
+  .p-btn:hover { background: var(--p-border); color: var(--p-fg); text-decoration: none; }
+  .p-btn.primary { background: var(--p-emphasis); color: var(--p-emphasis-fg); border-color: var(--p-emphasis); }
+  .p-btn.primary:hover { opacity: 0.88; }
+  .p-btn i { font-size: 18px; }
+
+  .limit-note {
+    margin-top: 24px; font-size: 13px; color: var(--p-fg-muted); text-align: center;
+    border: 1px dashed var(--p-border-strong); border-radius: var(--p-radius-md);
+    padding: 12px 16px;
+  }
+  .limit-note i { color: var(--p-fg); margin-right: 6px; }
+
+  /* footer */
+  footer { border-top: 1px solid var(--p-border); padding: 40px 0 48px; color: var(--p-fg-muted); font-size: 13.5px; margin-top: 64px; }
+  .foot { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .foot .credit { margin-left: auto; }
+  .foot a { color: var(--p-fg); }
+
+  /* responsive */
+  @media (max-width: 920px) {
+    .nav-links { display: none; }
+    .nav-burger { display: inline-flex; }
+    .theme-switch .t-label { display: none; }
+  }
+  @media (max-width: 600px) {
+    .input-row { flex-direction: column; }
+    .run-btn { width: 100%; justify-content: center; }
+    .result-finding { grid-template-columns: auto 1fr; }
+    .result-finding .where { grid-column: 2; margin-top: -4px; }
+    .result-score-card .score { font-size: 48px; }
+    .cta-actions { flex-direction: column; }
+    .p-btn { width: 100%; justify-content: center; }
+    .foot .credit { margin-left: 0; margin-right: auto; }
+  }
+</style>
+<script>
+  (function () {
+    var choice = localStorage.getItem("polish-theme") || "system";
+    function resolve(c) {
+      if (c !== "system") return c;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-color-mode", resolve(choice));
+    window.__polishThemeChoice = choice;
+  })();
+</script>
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html">polish<span class="cursor">_</span></a>
+    <div class="nav-links">
+      <a href="index.html#demo">Demo</a>
+      <a href="index.html#rubric">Rubric</a>
+      <a href="index.html#scoring">Scoring</a>
+      <a href="index.html#install">Install</a>
+      <a href="preview.html" class="active">Preview</a>
+    </div>
+    <div class="nav-right">
+      <div class="theme-switch" role="group" aria-label="Color theme">
+        <button type="button" data-theme="light" aria-pressed="false" title="Morning (light)">
+          <i class="hgi-stroke hgi-sun-01"></i><span class="t-label">Morning</span>
+        </button>
+        <button type="button" data-theme="dark" aria-pressed="false" title="Noon (dark)">
+          <i class="hgi-stroke hgi-moon-01"></i><span class="t-label">Noon</span>
+        </button>
+        <button type="button" data-theme="system" aria-pressed="false" title="Match your system">
+          <i class="hgi-stroke hgi-sliders-horizontal"></i><span class="t-label">System</span>
+        </button>
+      </div>
+      <button class="nav-burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+        <i class="hgi-stroke hgi-menu-01" id="burger-icon"></i>
+      </button>
+    </div>
+  </div>
+  <div class="nav-menu" id="nav-menu">
+    <a href="index.html#demo">Demo</a>
+    <a href="index.html#rubric">Rubric</a>
+    <a href="index.html#scoring">Scoring</a>
+    <a href="index.html#install">Install</a>
+    <a href="preview.html" class="active">Preview</a>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div class="preview-hero">
+      <h1>Preview Polish on a public repo</h1>
+      <p class="lede">
+        Paste a GitHub repository URL. Polish clones it, reviews up to 5 UI files,
+        and returns a score with representative findings.
+      </p>
+    </div>
+
+    <div class="input-card">
+      <div class="input-row">
+        <input type="url" id="repo-url" placeholder="https://github.com/user/repo" aria-label="GitHub repository URL" />
+        <button type="button" class="run-btn" id="run-btn" onclick="runPreview()">
+          <i class="hgi-stroke hgi-play-circle"></i>Review
+        </button>
+      </div>
+      <div class="privacy-note">
+        <i class="hgi-stroke hgi-shield-01"></i>
+        Public repos only. Nothing is stored. Results are discarded after viewing.
+      </div>
+    </div>
+
+    <div class="error-msg" id="error-msg">
+      <i class="hgi-stroke hgi-alert-circle"></i>
+      <span id="error-text"></span>
+    </div>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p id="loading-text">Cloning repository...</p>
+    </div>
+
+    <div class="results" id="results">
+      <div class="result-score-card">
+        <div class="repo-name" id="repo-name"></div>
+        <div class="score" id="score"></div>
+        <div class="verdict" id="verdict"></div>
+        <div class="result-bar"><i id="bar-fill"></i></div>
+        <div class="result-meta" id="result-meta"></div>
+      </div>
+
+      <div class="result-findings" id="findings-section">
+        <h3>Representative findings</h3>
+        <div id="findings-list"></div>
+      </div>
+
+      <div class="cta-card">
+        <h3>This is a preview</h3>
+        <p>
+          The full Polish review covers your entire codebase, all rubric layers,
+          interface writing, and returns machine-readable receipts for CI and agents.
+        </p>
+        <div class="cta-actions">
+          <a class="p-btn primary" href="index.html#install"><i class="hgi-stroke hgi-console"></i>Install Polish</a>
+          <a class="p-btn" href="index.html#mcp"><i class="hgi-stroke hgi-bot"></i>Connect MCP</a>
+          <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-github"></i>View on GitHub</a>
+        </div>
+      </div>
+
+      <div class="limit-note">
+        <i class="hgi-stroke hgi-info-01"></i>
+        Preview reviews up to 5 UI files. Run Polish locally for the full experience.
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>polish is MIT licensed on <a href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-github"></i>GitHub</a>. Built for people who review their own UI.</span>
+    <span class="credit">Made by <a href="https://studio.tomiabe.com">Tomi Abe Studio</a></span>
+  </div>
+</footer>
+
+<script>
+  // ===== theme =====
+  (function () {
+    var root = document.documentElement;
+    var choice = window.__polishThemeChoice || "system";
+    var media = window.matchMedia("(prefers-color-scheme: dark)");
+    function applyResolved() {
+      var resolved = choice === "system" ? (media.matches ? "dark" : "light") : choice;
+      root.setAttribute("data-color-mode", resolved);
+    }
+    function syncButtons() {
+      document.querySelectorAll(".theme-switch button").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.theme === choice));
+      });
+    }
+    document.querySelectorAll(".theme-switch button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        choice = b.dataset.theme;
+        localStorage.setItem("polish-theme", choice);
+        applyResolved();
+        syncButtons();
+      });
+    });
+    media.addEventListener("change", function () {
+      if (choice === "system") applyResolved();
+    });
+    syncButtons();
+  })();
+
+  // ===== mobile menu =====
+  (function () {
+    var burger = document.getElementById("burger-icon");
+    var btn = burger.parentElement;
+    var menu = document.getElementById("nav-menu");
+    btn.addEventListener("click", function () {
+      var open = menu.classList.toggle("open");
+      btn.setAttribute("aria-expanded", String(open));
+      burger.className = open ? "hgi-stroke hgi-multiply-01" : "hgi-stroke hgi-menu-01";
+    });
+  })();
+
+  // ===== preview logic =====
+  function parseRepoUrl(url) {
+    try {
+      var u = new URL(url);
+      if (u.hostname !== "github.com") return null;
+      var parts = u.pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+      if (parts.length < 2) return null;
+      return { owner: parts[0], repo: parts[1] };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  var loadingSteps = [
+    "Cloning repository...",
+    "Scanning for UI files...",
+    "Reviewing components...",
+    "Scoring findings..."
+  ];
+
+  function showError(msg) {
+    document.getElementById("error-text").textContent = msg;
+    document.getElementById("error-msg").classList.add("active");
+  }
+
+  function hideError() {
+    document.getElementById("error-msg").classList.remove("active");
+  }
+
+  function showLoading() {
+    document.getElementById("loading").classList.add("active");
+    document.getElementById("results").classList.remove("active");
+    hideError();
+  }
+
+  function hideLoading() {
+    document.getElementById("loading").classList.remove("active");
+  }
+
+  function renderResults(data) {
+    var score = data.score;
+    var el = document.getElementById("score");
+    el.innerHTML = score + '<span>/100</span>';
+    el.style.color = score >= 60 ? "var(--p-fg)" : "var(--p-sev-critical)";
+
+    document.getElementById("repo-name").textContent = data.repo;
+    document.getElementById("verdict").textContent = data.verdict;
+
+    var bar = document.getElementById("bar-fill");
+    bar.style.width = score + "%";
+    bar.style.background = score >= 60 ? "var(--p-fg)" : "var(--p-sev-critical)";
+
+    document.getElementById("result-meta").innerHTML =
+      "<span>" + data.fileCount + " files reviewed</span>" +
+      "<span>" + data.findings.length + " findings</span>";
+
+    var list = document.getElementById("findings-list");
+    list.innerHTML = "";
+    data.findings.forEach(function (f) {
+      var div = document.createElement("div");
+      div.className = "result-finding";
+      div.innerHTML =
+        '<span class="sev ' + f.severity + '">' + f.severity + "</span>" +
+        '<span class="cat">' + (f.category || "") + "</span>" +
+        "<span>" + escapeHtml(f.message) + "</span>" +
+        '<span class="where">' + (f.file || "") + (f.line ? ":" + f.line : "") + "</span>";
+      list.appendChild(div);
+    });
+
+    document.getElementById("results").classList.add("active");
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  var loadingTimer = null;
+  function animateLoading() {
+    var i = 0;
+    clearInterval(loadingTimer);
+    loadingTimer = setInterval(function () {
+      i = (i + 1) % loadingSteps.length;
+      document.getElementById("loading-text").textContent = loadingSteps[i];
+    }, 1200);
+  }
+
+  async function runPreview() {
+    var input = document.getElementById("repo-url");
+    var raw = input.value.trim();
+    hideError();
+    document.getElementById("results").classList.remove("active");
+
+    if (!raw) {
+      showError("Enter a GitHub repository URL.");
+      return;
+    }
+
+    // Normalize: add https:// if missing
+    if (!raw.startsWith("http")) raw = "https://" + raw;
+
+    var repo = parseRepoUrl(raw);
+    if (!repo) {
+      showError("Enter a valid GitHub repository URL (e.g. https://github.com/user/repo).");
+      return;
+    }
+
+    showLoading();
+    animateLoading();
+    document.getElementById("run-btn").disabled = true;
+
+    try {
+      // TODO: Replace with real backend call
+      // For now, simulate a preview with mock data
+      await new Promise(function (resolve) { setTimeout(resolve, 3000); });
+
+      clearInterval(loadingTimer);
+      hideLoading();
+
+      // Mock result — replace with actual API response
+      renderResults({
+        repo: repo.owner + "/" + repo.repo,
+        score: Math.floor(Math.random() * 40) + 45,
+        verdict: "Preview score based on up to 5 UI files.",
+        fileCount: Math.floor(Math.random() * 3) + 2,
+        findings: [
+          { severity: "serious", category: "[H1]", message: "No loading state for interactive actions. Clicking gives no feedback.", file: "src/components/Button.tsx", line: 14 },
+          { severity: "moderate", category: "[C1]", message: "Hardcoded hex color #3b82f6 should use a design token.", file: "src/styles/theme.css", line: 7 },
+          { severity: "moderate", category: "[W3]", message: "Helper text is vague. Replace 'Enter value' with specific guidance.", file: "src/components/Input.tsx", line: 22 }
+        ]
+      });
+    } catch (err) {
+      clearInterval(loadingTimer);
+      hideLoading();
+      showError("Something went wrong. Please try again.");
+    }
+
+    document.getElementById("run-btn").disabled = false;
+  }
+
+  // Enter key triggers review
+  document.getElementById("repo-url").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") runPreview();
+  });
+</script>
+</body>
+</html>
