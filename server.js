@@ -28,10 +28,15 @@ function parseGitHubUrl(url) {
 
 function shallowClone(owner, repo, dest) {
   const url = `https://github.com/${owner}/${repo}.git`;
-  execSync(`git clone --depth 1 --single-branch --no-tags "${url}" "${dest}"`, {
-    timeout: 30_000,
-    stdio: "pipe"
-  });
+  try {
+    execSync(`git clone --depth 1 --single-branch --no-tags "${url}" "${dest}"`, {
+      timeout: 30_000,
+      stdio: "pipe"
+    });
+  } catch (err) {
+    const detail = err.stderr?.toString().trim() || err.message;
+    throw new Error(`GitHub clone failed: ${detail}`);
+  }
 }
 
 async function readFiles(paths) {
@@ -158,10 +163,14 @@ async function handlePreview(req, res) {
     });
   } catch (err) {
     console.error("Preview error:", err.message);
-    const msg = err.message.includes("not found") || err.message.includes("does not exist")
+    const isRepoError = err.message.startsWith("GitHub clone failed:") &&
+      (err.message.includes("not found") || err.message.includes("does not exist"));
+    const msg = isRepoError
       ? "Repository not found. Check the URL and try again."
       : err.message.includes("Could not resolve")
         ? "Could not reach GitHub. Check your network and try again."
+        : err.message.startsWith("LLM API error")
+          ? "The review provider could not complete the review. Check the configured API key and model."
         : "Something went wrong. Please try again.";
     return jsonReply(res, 500, { error: msg });
   } finally {
