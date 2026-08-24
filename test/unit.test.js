@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { scoreFindings, summarize } from "../lib/scoring.js";
 import { expandGlobs } from "../lib/config.js";
 import { resolveProviderPlan } from "../lib/llm.js";
+import { AGENT_INSTRUCTIONS, writeAgentInstructions } from "../lib/agent.js";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 test("score starts at 100 with no findings", () => {
   assert.equal(scoreFindings([]), 100);
@@ -71,5 +75,16 @@ test("provider plan respects explicit lists and env fallback", () => {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
+  }
+});
+
+test("agent instructions are created without overwriting existing files", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "polish-agent-"));
+  try {
+    const target = await writeAgentInstructions(dir);
+    assert.equal(await readFile(target, "utf8"), AGENT_INSTRUCTIONS);
+    await assert.rejects(() => writeAgentInstructions(dir), /already exists/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });

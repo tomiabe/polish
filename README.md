@@ -17,6 +17,7 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 - Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - Optional provider fallback chains, so you can try multiple APIs in order.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
+- `polish init-agent` writes a safe, repo-local `AGENTS.md` that teaches coding agents when to review UI changes, how to recognize a receipt, and how to verify fixes.
 - Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review and returns a new remaining-issues score.
 - Exits with code 1 when critical findings exist, so it works as a pre-commit or CI gate.
 
@@ -46,6 +47,7 @@ polish src/components src/pages/*.tsx    # audit specific files or directories
 polish --verify findings.json           # re-check that previous findings are fixed
 polish --dry-run                        # preview what would be sent, no API call
 polish --json                           # machine-readable receipt + findings, for CI or agents
+polish init-agent                       # add the Polish workflow to AGENTS.md
 ```
 
 ## Config
@@ -146,6 +148,10 @@ Register it in any MCP-capable client. For opencode, in `~/.config/opencode/open
 
 Claude Desktop reads `~/Library/Application Support/Claude/claude_desktop_config.json`, and Codex reads `~/.codex/config.toml`. In all three, use the absolute path to `node` (for example `/usr/local/bin/node`) because GUI apps do not inherit your shell PATH, and pass the API key in the server's environment because GUI apps do not load your shell profile.
 
+### Agent instructions
+
+After registering the MCP server, run `polish init-agent` from the project root. It creates `AGENTS.md` with a review loop for UI changes. The command refuses to replace an existing file unless you pass `--force`.
+
 ## Development
 
 ```bash
@@ -177,6 +183,7 @@ lib/config.js        config loading, glob expansion, defaults
 lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
+lib/agent.js         repo-local instructions for coding agents
 lib/scoring.js       weighted scoring and summaries
 demo/                before/after demo components (ProfileCard, SettingsForm)
 test/                unit and integration tests

@@ -4,6 +4,7 @@ import path from "node:path";
 import { expandGlobs, loadConfig } from "../lib/config.js";
 import { reviewFiles, verifyFiles, resolveRubric } from "../lib/review.js";
 import { buildReviewSystem, buildReviewUser } from "../lib/prompt.js";
+import { writeAgentInstructions } from "../lib/agent.js";
 
 const CYAN = "\x1b[36m";
 const RED = "\x1b[31m";
@@ -21,11 +22,13 @@ function usage() {
 Usage:
   polish [files...]                  Review files (or config globs)
   polish --verify <findings.json>    Re-check previously reported findings
+  polish init-agent                  Write AGENTS.md with the Polish review loop
   polish --dry-run [files...]        Print what would be sent, no API call
 
 Options:
   --config <path>   Config file (default: ./.polish.json)
   --json            Output machine-readable receipt JSON for review or verify
+  --force           Allow init-agent to replace an existing AGENTS.md
   --max-files <n>   Cap number of files (default 20)
   --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
   --help            Show this help
@@ -43,7 +46,7 @@ API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ
 }
 
 function parseArgs(argv) {
-  const opts = { files: [], config: null, json: false, dryRun: false, verify: null };
+  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") { opts.help = true; continue; }
@@ -51,10 +54,15 @@ function parseArgs(argv) {
     if (a === "--dry-run") { opts.dryRun = true; continue; }
     if (a === "--config") { opts.config = argv[++i]; continue; }
     if (a === "--verify") { opts.verify = argv[++i]; continue; }
+    if (a === "--force") { opts.force = true; continue; }
     if (a === "--max-files") { opts.maxFiles = Number(argv[++i]); continue; }
     if (a === "--max-file-bytes") { opts.maxFileBytes = Number(argv[++i]); continue; }
     if (a.startsWith("-")) throw new Error(`Unknown option: ${a}`);
     opts.files.push(a);
+  }
+  if (opts.files[0] === "init-agent") {
+    opts.initAgent = true;
+    opts.files.shift();
   }
   return opts;
 }
@@ -191,6 +199,11 @@ async function main() {
     const opts = parseArgs(process.argv.slice(2));
     if (opts.help) {
       console.log(usage());
+      return;
+    }
+    if (opts.initAgent) {
+      const target = await writeAgentInstructions(process.cwd(), opts.force);
+      console.log(`Created ${path.relative(process.cwd(), target)}`);
       return;
     }
     const cfg = await loadConfig(opts.config);

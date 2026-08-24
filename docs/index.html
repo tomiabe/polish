@@ -1224,6 +1224,7 @@ export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / GEMINI 
 polish src/components src/pages/*.tsx    <span class="c"># or specific files</span>
 polish --verify findings.json           <span class="c"># re-check that fixes landed</span>
 polish --json                           <span class="c"># machine-readable receipt, for CI or agents</span>
+polish init-agent                       <span class="c"># write the agent review loop</span>
 polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
           </div>
           <p>Exits with code 1 when critical findings exist. Wire it into pre-commit or CI.</p>
