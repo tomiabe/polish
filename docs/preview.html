@@ -77,7 +77,7 @@
   :focus-visible { outline: 2px solid var(--p-focus); outline-offset: 2px; border-radius: 2px; }
   ::selection { background: var(--p-border-strong); color: var(--p-fg); }
   code, pre, .mono { font-family: var(--p-font-mono); }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     body, * { transition: none !important; }
@@ -147,7 +147,8 @@
   /* input form */
   .input-card {
     background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
-    box-shadow: var(--p-shadow); padding: 24px; margin-top: 32px;
+    box-shadow: var(--p-shadow); padding: 24px; margin-top: 32px; max-width: 680px;
+    margin-left: auto; margin-right: auto;
   }
   .input-row {
     display: flex; gap: 10px; align-items: stretch;
@@ -206,7 +207,8 @@
 
   .result-score-card {
     background: var(--p-canvas); border: 1px solid var(--p-border); border-radius: var(--p-radius-lg);
-    padding: 28px; box-shadow: var(--p-shadow); text-align: center; margin-bottom: 20px;
+    padding: 28px; box-shadow: var(--p-shadow); text-align: center; margin-bottom: 20px; max-width: 680px;
+    margin-left: auto; margin-right: auto;
   }
   .result-score-card .repo-name {
     font-family: var(--p-font-mono); font-size: 13px; color: var(--p-fg-muted);
@@ -274,12 +276,12 @@
   .limit-note {
     margin-top: 24px; font-size: 13px; color: var(--p-fg-muted); text-align: center;
     border: 1px dashed var(--p-border-strong); border-radius: var(--p-radius-md);
-    padding: 12px 16px;
+    padding: 12px 16px; max-width: 680px; margin-left: auto; margin-right: auto;
   }
   .limit-note i { color: var(--p-fg); margin-right: 6px; }
 
   /* footer */
-  footer { border-top: 1px solid var(--p-border); padding: 40px 0 48px; color: var(--p-fg-muted); font-size: 13.5px; margin-top: 64px; }
+  footer { border-top: 1px solid var(--p-border); padding: 40px 0 48px; color: var(--p-fg-muted); font-size: 13.5px; margin-top: 120px; }
   .foot { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
   .foot .credit { margin-left: auto; }
   .foot a { color: var(--p-fg); }
