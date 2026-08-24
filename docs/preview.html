@@ -182,7 +182,7 @@
   .run-btn i { font-size: 18px; }
   .privacy-note {
     margin-top: 12px; font-size: 13px; color: var(--p-fg-muted);
-    display: flex; align-items: center; gap: 6px;
+    display: flex; align-items: flex-start; gap: 6px;
   }
   .privacy-note i { font-size: 15px; flex-shrink: 0; }
 
@@ -273,7 +273,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     font-family: var(--p-font-sans); font-size: 15px; font-weight: 600;
     padding: 0 20px; min-height: 44px; border-radius: var(--p-radius-md);
-    border: 2px solid var(--p-border-strong); background: var(--p-canvas-subtle); color: var(--p-fg);
+    border: 1.5px solid var(--p-border-strong); background: var(--p-canvas-subtle); color: var(--p-fg);
     cursor: pointer; text-decoration: none;
   }
   .p-btn:hover { background: var(--p-border); color: var(--p-fg); text-decoration: none; }
@@ -306,7 +306,7 @@
     .result-finding { grid-template-columns: auto auto; }
     .result-finding .cat { grid-column: 2; }
     .result-finding span:not(.sev):not(.cat):not(.where) { grid-column: 1 / -1; margin-top: 4px; }
-    .result-finding .where { grid-column: 1 / -1; margin-top: 2px; text-align: right; }
+    .result-finding .where { grid-column: 1 / -1; margin-top: 2px; text-align: left; }
     .result-score-card .score { font-size: 48px; }
     .cta-actions { flex-direction: column; }
     .p-btn { width: 100%; justify-content: center; }
