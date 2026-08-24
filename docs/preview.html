@@ -289,6 +289,19 @@
   }
   .limit-note i { color: var(--p-fg); margin-right: 6px; }
 
+  /* receipt */
+  .receipt {
+    display: none;
+    background: var(--p-canvas); border: 1px solid var(--p-border);
+    border-radius: var(--p-radius-md); padding: 10px 14px;
+    font-family: var(--p-font-mono); font-size: 12px; color: var(--p-fg-muted);
+    max-width: 680px; margin: 0 auto 20px;
+    align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .receipt.active { display: flex; }
+  .receipt .receipt-check { color: #2da44e; font-size: 14px; flex-shrink: 0; }
+  .receipt .receipt-id { opacity: 0.7; }
+
   /* footer */
   footer { border-top: 1px solid var(--p-border); padding: 40px 0 48px; color: var(--p-fg-muted); font-size: 13.5px; margin-top: 120px; }
   .foot { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
@@ -424,6 +437,12 @@
         </div>
       </div>
 
+      <div class="receipt" id="receipt">
+        <i class="hgi-stroke hgi-check-circle receipt-check"></i>
+        <span>Polish applied</span>
+        <span class="receipt-id" id="receipt-id"></span>
+      </div>
+
       <div class="limit-note">
         <i class="hgi-stroke hgi-info-01"></i>
         Preview reviews up to 5 UI files. Run Polish locally for the full experience.
@@ -514,6 +533,7 @@
   function showLoading() {
     document.getElementById("loading").classList.add("active");
     document.getElementById("results").classList.remove("active");
+    document.getElementById("receipt").classList.remove("active");
     hideError();
   }
 
@@ -550,6 +570,15 @@
         '<span class="where">' + (f.file || "") + (f.line ? ":" + f.line : "") + "</span>";
       list.appendChild(div);
     });
+
+    // receipt
+    if (data.receipt) {
+      document.getElementById("receipt-id").textContent =
+        "run " + data.receipt.runId.slice(0, 8) + " · " +
+        data.receipt.fileCount + " files · " +
+        data.receipt.mode;
+      document.getElementById("receipt").classList.add("active");
+    }
 
     document.getElementById("results").classList.add("active");
   }

@@ -175,7 +175,8 @@ async function handlePreview(req, res) {
       score: result.score,
       verdict,
       fileCount: files.length,
-      findings
+      findings,
+      receipt: result.receipt
     });
   } catch (err) {
     console.error("Preview error:", err.message);
