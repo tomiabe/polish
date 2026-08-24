@@ -439,6 +439,8 @@
 </footer>
 
 <script>
+  var PREVIEW_API = "https://polish-preview.onrender.com";
+
   // ===== theme =====
   (function () {
     var root = document.documentElement;
@@ -592,7 +594,7 @@
     document.getElementById("run-btn").disabled = true;
 
     try {
-      var res = await fetch("/api/preview", {
+      var res = await fetch(PREVIEW_API + "/api/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: raw })
