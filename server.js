@@ -120,15 +120,31 @@ async function handlePreview(req, res) {
       });
     }
 
-    // 3. Pick up to MAX_FILES (prefer shorter files for faster review)
+    // 3. Pick up to MAX_FILES — representative spread, not just the smallest
     const sized = await Promise.all(
       allPaths.map(async (p) => ({
         path: p,
         size: (await fs.stat(p)).size
       }))
     );
-    sized.sort((a, b) => a.size - b.size);
-    const picked = sized.slice(0, MAX_FILES).map((s) => s.path);
+    // Skip trivially small files (< 200 bytes or ~5 lines) — they rarely
+    // contain meaningful UI findings and skew the score artificially high.
+    const meaningful = sized.filter((s) => s.size >= 200);
+    // If everything is tiny, fall back to the original set so we still
+    // review *something* rather than returning an empty result.
+    const pool = meaningful.length >= MAX_FILES ? meaningful : sized;
+    pool.sort((a, b) => a.size - b.size);
+    // Stratified pick: spread evenly across the size range so small,
+    // medium, and large files are all represented.
+    const picked = [];
+    if (pool.length <= MAX_FILES) {
+      picked.push(...pool.map((s) => s.path));
+    } else {
+      const step = (pool.length - 1) / (MAX_FILES - 1);
+      for (let i = 0; i < MAX_FILES; i++) {
+        picked.push(pool[Math.round(i * step)].path);
+      }
+    }
 
     // 4. Read content
     const files = await readFiles(picked);
