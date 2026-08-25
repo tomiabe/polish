@@ -4,6 +4,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { expandGlobs, DEFAULT_CONFIG } from "./lib/config.js";
 import { reviewFiles, resolveRubric } from "./lib/review.js";
+import { createPreviewLimits } from "./lib/preview-limits.js";
 
 const PORT = process.env.PORT && process.env.PORT !== "0" ? Number(process.env.PORT) : 3939;
 const DOCS = path.resolve("docs");
@@ -18,14 +19,19 @@ const RATE_LIMIT_MAX = 3; // per IP per hour
 const DAILY_GLOBAL_CAP = 50; // total reviews per day
 const MAX_CONCURRENT = 2; // simultaneous reviews
 const LLM_MAX_TOKENS = 3_000; // output token cap per review
-const rateLimits = new Map(); // IP → { startedAt, count }
-let dailyCount = 0;
-let concurrentReviews = 0;
+const LLM_TIMEOUT_MS = 45_000;
+const previewLimits = createPreviewLimits({
+  rateWindowMs: RATE_LIMIT_WINDOW_MS,
+  rateMax: RATE_LIMIT_MAX,
+  dailyCap: DAILY_GLOBAL_CAP,
+  maxConcurrent: MAX_CONCURRENT
+});
 
 function dailyCountReset() {
   const now = new Date();
   const msUntilMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)) - now;
-  setTimeout(() => { dailyCount = 0; dailyCountReset(); }, msUntilMidnight + 1_000);
+  const timer = setTimeout(() => { previewLimits.resetDaily(); dailyCountReset(); }, msUntilMidnight + 1_000);
+  timer.unref?.();
 }
 dailyCountReset();
 
@@ -89,31 +95,8 @@ function getClientKey(req) {
 }
 
 function checkRateLimit(req) {
-  const now = Date.now();
-  // Clean up expired per-IP entries
-  for (const [key, entry] of rateLimits) {
-    if (now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) rateLimits.delete(key);
-  }
   const key = getClientKey(req);
-  const entry = rateLimits.get(key);
-  if (!entry || now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) {
-    rateLimits.set(key, { startedAt: now, count: 1 });
-  } else {
-    entry.count += 1;
-  }
-  // Check limits in priority order
-  const ipCount = rateLimits.get(key)?.count || 0;
-  if (ipCount > RATE_LIMIT_MAX) {
-    const retryAfter = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - rateLimits.get(key).startedAt)) / 60_000);
-    return { allowed: false, reason: `Rate limit: ${RATE_LIMIT_MAX} reviews per hour. Try again in ${retryAfter} min.` };
-  }
-  if (dailyCount >= DAILY_GLOBAL_CAP) {
-    return { allowed: false, reason: "Daily review limit reached. Try again tomorrow." };
-  }
-  if (concurrentReviews >= MAX_CONCURRENT) {
-    return { allowed: false, reason: "Too many reviews running. Try again in a moment." };
-  }
-  return { allowed: true };
+  return previewLimits.check(key);
 }
 
 async function readFiles(paths) {
@@ -130,12 +113,13 @@ async function readFiles(paths) {
   return out;
 }
 
-function jsonReply(res, status, data) {
+function jsonReply(res, status, data, extraHeaders = {}) {
   const body = JSON.stringify(data);
   res.writeHead(status, {
     "content-type": "application/json",
     "cache-control": "no-store",
-    ...corsHeaders(res.req)
+    ...corsHeaders(res.req),
+    ...extraHeaders
   });
   res.end(body);
 }
@@ -165,7 +149,9 @@ async function handlePreview(req, res) {
 
   const rateCheck = checkRateLimit(req);
   if (!rateCheck.allowed) {
-    return jsonReply(res, 429, { error: rateCheck.reason });
+    return jsonReply(res, 429, { error: rateCheck.reason }, {
+      "retry-after": String(rateCheck.retryAfterSeconds)
+    });
   }
 
   let body = "";
@@ -195,8 +181,7 @@ async function handlePreview(req, res) {
   const repoKey = `${repo.owner}/${repo.repo}`;
   const dest = path.join(TMP, `${repo.owner}__${repo.repo}__${Date.now()}`);
 
-  concurrentReviews++;
-  dailyCount++;
+  previewLimits.start();
 
   try {
     // 1. Clone
@@ -254,7 +239,7 @@ async function handlePreview(req, res) {
     const files = await readFiles(picked);
 
     // 5. Run review — cap output tokens to control costs
-    const cfg = { ...DEFAULT_CONFIG, maxTokens: LLM_MAX_TOKENS };
+    const cfg = { ...DEFAULT_CONFIG, maxTokens: LLM_MAX_TOKENS, timeoutMs: LLM_TIMEOUT_MS };
     const rubric = resolveRubric(cfg);
     const result = await reviewFiles(cfg, files);
 
@@ -300,10 +285,12 @@ async function handlePreview(req, res) {
         ? "Could not reach GitHub. Check your network and try again."
         : err.message.startsWith("LLM API error")
           ? "The review provider could not complete the review. Check the configured API key and model."
+        : err.message.startsWith("LLM API timed out")
+          ? "The review provider took too long to respond. Please try again."
         : "Something went wrong. Please try again.";
     return jsonReply(res, 500, { error: msg });
   } finally {
-    concurrentReviews = Math.max(0, concurrentReviews - 1);
+    previewLimits.finish();
     // Cleanup
     fs.rm(dest, { recursive: true, force: true }).catch(() => {});
   }
