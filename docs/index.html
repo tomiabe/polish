@@ -29,6 +29,7 @@
 
   gtag('config', 'G-R0VKNWVNLQ');
 </script>
+<script src="analytics.js" defer></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212529'/%3E%3Cpath d='M8 11l6 5-6 5' stroke='%23f8f9fa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 21h7' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -776,9 +777,9 @@
         with a self‑hosted Node script, your own API key, no bots in your repo, and no quotas.
       </p>
       <div class="cta">
-        <a class="p-btn primary" href="#install"><i class="hgi-stroke hgi-console"></i>Get started</a>
+        <a class="p-btn primary" href="#install" data-analytics-event="polish_install_click" data-analytics-placement="hero"><i class="hgi-stroke hgi-console"></i>Get started</a>
         <a class="p-btn" href="#demo"><i class="hgi-stroke hgi-arrow-right-01"></i>See it run</a>
-        <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-github"></i>Star on GitHub</a>
+        <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer" data-analytics-event="polish_github_click" data-analytics-placement="hero"><i class="hgi-stroke hgi-github"></i>Star on GitHub</a>
       </div>
       <div class="stats">
         <div class="stat">
@@ -916,7 +917,7 @@
         <h2 style="font-size: 22px; margin: 0 0 6px;">Try Polish on a public repo</h2>
         <p style="color: var(--p-fg-muted); font-size: 15px; margin: 0;">Paste a GitHub URL. Get a preview score with three findings.</p>
       </div>
-      <a class="p-btn primary" href="preview.html" style="flex-shrink: 0;"><i class="hgi-stroke hgi-play-circle"></i>Preview a repo</a>
+      <a class="p-btn primary" href="preview.html" style="flex-shrink: 0;" data-analytics-event="polish_preview_click" data-analytics-placement="homepage_try"><i class="hgi-stroke hgi-play-circle"></i>Preview a repo</a>
     </div>
   </section>
 

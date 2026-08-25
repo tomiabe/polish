@@ -15,6 +15,7 @@
   gtag('js', new Date());
   gtag('config', 'G-R0VKNWVNLQ');
 </script>
+<script src="analytics.js" defer></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23212529'/%3E%3Cpath d='M8 11l6 5-6 5' stroke='%23f8f9fa' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M17 21h7' stroke='%235eead4' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -396,7 +397,7 @@
       </div>
       <div class="privacy-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        Public repos only. Nothing is stored. Results are discarded after viewing.
+        Public repos only. Repository contents are not stored. Usage analytics records page and button interactions, not review contents.
       </div>
     </div>
 
@@ -431,9 +432,9 @@
           interface writing, and returns machine-readable receipts for CI and agents.
         </p>
         <div class="cta-actions">
-          <a class="p-btn primary" href="index.html#install"><i class="hgi-stroke hgi-console"></i>Install Polish</a>
-          <a class="p-btn" href="index.html#mcp"><i class="hgi-stroke hgi-bot"></i>Connect MCP</a>
-          <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-github"></i>View on GitHub</a>
+          <a class="p-btn primary" href="index.html#install" data-analytics-event="polish_install_click" data-analytics-placement="preview_result"><i class="hgi-stroke hgi-console"></i>Install Polish</a>
+          <a class="p-btn" href="index.html#mcp" data-analytics-event="polish_mcp_click" data-analytics-placement="preview_result"><i class="hgi-stroke hgi-bot"></i>Connect MCP</a>
+          <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer" data-analytics-event="polish_github_click" data-analytics-placement="preview_result"><i class="hgi-stroke hgi-github"></i>View on GitHub</a>
         </div>
       </div>
 
@@ -622,6 +623,9 @@
     showLoading();
     animateLoading();
     document.getElementById("run-btn").disabled = true;
+    if (window.polishAnalytics) {
+      window.polishAnalytics.track("polish_review_started", { placement: "preview_form" });
+    }
 
     try {
       var res = await fetch(PREVIEW_API + "/api/preview", {
@@ -636,14 +640,28 @@
       var data = await res.json();
 
       if (!res.ok || data.error) {
+        if (window.polishAnalytics) {
+          window.polishAnalytics.track("polish_review_failed", { placement: "preview_form", status: String(res.status) });
+        }
         showError(data.error || "Something went wrong. Please try again.");
         return;
       }
 
+      if (window.polishAnalytics) {
+        window.polishAnalytics.track("polish_review_completed", {
+          placement: "preview_form",
+          file_count: String(data.fileCount || 0),
+          finding_count: String(data.findings ? data.findings.length : 0),
+          score_band: data.score >= 80 ? "80_100" : data.score >= 60 ? "60_79" : "0_59"
+        });
+      }
       renderResults(data);
     } catch (err) {
       clearInterval(loadingTimer);
       hideLoading();
+      if (window.polishAnalytics) {
+        window.polishAnalytics.track("polish_review_failed", { placement: "preview_form", status: "network" });
+      }
       showError("Could not reach the server. Make sure the preview server is running.");
     }
 
