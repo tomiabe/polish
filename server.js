@@ -11,9 +11,24 @@ const TMP = path.resolve(".preview-cache");
 const MAX_FILES = 5;
 const MAX_FILE_BYTES = 50_000;
 const MAX_BODY_BYTES = 4_096;
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1_000;
-const RATE_LIMIT_MAX = 10;
-const rateLimits = new Map();
+
+// ── rate limits ──
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1_000; // 1 hour
+const RATE_LIMIT_MAX = 3; // per IP per hour
+const DAILY_GLOBAL_CAP = 50; // total reviews per day
+const MAX_CONCURRENT = 2; // simultaneous reviews
+const LLM_MAX_TOKENS = 3_000; // output token cap per review
+const rateLimits = new Map(); // IP → { startedAt, count }
+let dailyCount = 0;
+let concurrentReviews = 0;
+
+function dailyCountReset() {
+  const now = new Date();
+  const msUntilMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)) - now;
+  setTimeout(() => { dailyCount = 0; dailyCountReset(); }, msUntilMidnight + 1_000);
+}
+dailyCountReset();
+
 const DEFAULT_ALLOWED_ORIGINS = new Set([
   "https://polish.tomiabe.com",
   "https://www.polish.tomiabe.com",
@@ -75,6 +90,7 @@ function getClientKey(req) {
 
 function checkRateLimit(req) {
   const now = Date.now();
+  // Clean up expired per-IP entries
   for (const [key, entry] of rateLimits) {
     if (now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) rateLimits.delete(key);
   }
@@ -82,10 +98,22 @@ function checkRateLimit(req) {
   const entry = rateLimits.get(key);
   if (!entry || now - entry.startedAt >= RATE_LIMIT_WINDOW_MS) {
     rateLimits.set(key, { startedAt: now, count: 1 });
-    return true;
+  } else {
+    entry.count += 1;
   }
-  entry.count += 1;
-  return entry.count <= RATE_LIMIT_MAX;
+  // Check limits in priority order
+  const ipCount = rateLimits.get(key)?.count || 0;
+  if (ipCount > RATE_LIMIT_MAX) {
+    const retryAfter = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - rateLimits.get(key).startedAt)) / 60_000);
+    return { allowed: false, reason: `Rate limit: ${RATE_LIMIT_MAX} reviews per hour. Try again in ${retryAfter} min.` };
+  }
+  if (dailyCount >= DAILY_GLOBAL_CAP) {
+    return { allowed: false, reason: "Daily review limit reached. Try again tomorrow." };
+  }
+  if (concurrentReviews >= MAX_CONCURRENT) {
+    return { allowed: false, reason: "Too many reviews running. Try again in a moment." };
+  }
+  return { allowed: true };
 }
 
 async function readFiles(paths) {
@@ -135,8 +163,9 @@ async function handlePreview(req, res) {
     return jsonReply(res, 405, { error: "Method not allowed" });
   }
 
-  if (!checkRateLimit(req)) {
-    return jsonReply(res, 429, { error: "Preview limit reached. Try again in a few minutes." });
+  const rateCheck = checkRateLimit(req);
+  if (!rateCheck.allowed) {
+    return jsonReply(res, 429, { error: rateCheck.reason });
   }
 
   let body = "";
@@ -165,6 +194,9 @@ async function handlePreview(req, res) {
 
   const repoKey = `${repo.owner}/${repo.repo}`;
   const dest = path.join(TMP, `${repo.owner}__${repo.repo}__${Date.now()}`);
+
+  concurrentReviews++;
+  dailyCount++;
 
   try {
     // 1. Clone
@@ -221,8 +253,8 @@ async function handlePreview(req, res) {
     // 4. Read content
     const files = await readFiles(picked);
 
-    // 5. Run review
-    const cfg = { ...DEFAULT_CONFIG };
+    // 5. Run review — cap output tokens to control costs
+    const cfg = { ...DEFAULT_CONFIG, maxTokens: LLM_MAX_TOKENS };
     const rubric = resolveRubric(cfg);
     const result = await reviewFiles(cfg, files);
 
@@ -271,6 +303,7 @@ async function handlePreview(req, res) {
         : "Something went wrong. Please try again.";
     return jsonReply(res, 500, { error: msg });
   } finally {
+    concurrentReviews = Math.max(0, concurrentReviews - 1);
     // Cleanup
     fs.rm(dest, { recursive: true, force: true }).catch(() => {});
   }
