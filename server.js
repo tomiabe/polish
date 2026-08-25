@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { expandGlobs, DEFAULT_CONFIG } from "./lib/config.js";
 import { reviewFiles, resolveRubric } from "./lib/review.js";
@@ -128,6 +129,7 @@ function jsonReply(res, status, data, extraHeaders = {}) {
 
 async function handlePreview(req, res) {
   res.req = req;
+  const requestId = randomUUID();
   // CORS preflight
   if (req.method === "OPTIONS") {
     const origin = req.headers.origin;
@@ -149,7 +151,7 @@ async function handlePreview(req, res) {
 
   const rateCheck = checkRateLimit(req);
   if (!rateCheck.allowed) {
-    return jsonReply(res, 429, { error: rateCheck.reason }, {
+    return jsonReply(res, 429, { error: rateCheck.reason, code: "PREVIEW_LIMIT_REACHED", requestId }, {
       "retry-after": String(rateCheck.retryAfterSeconds)
     });
   }
@@ -276,19 +278,25 @@ async function handlePreview(req, res) {
       receipt
     });
   } catch (err) {
-    console.error("Preview error:", err.message);
+    console.error("Preview error", { requestId, repo: repoKey, error: err.message });
     const isRepoError = err.message.startsWith("GitHub clone failed:") &&
       (err.message.includes("not found") || err.message.includes("does not exist"));
-    const msg = isRepoError
-      ? "Repository not found. Check the URL and try again."
-      : err.message.includes("Could not resolve")
-        ? "Could not reach GitHub. Check your network and try again."
-        : err.message.startsWith("LLM API error")
-          ? "The review provider could not complete the review. Check the configured API key and model."
-        : err.message.startsWith("LLM API timed out")
-          ? "The review provider took too long to respond. Please try again."
-        : "Something went wrong. Please try again.";
-    return jsonReply(res, 500, { error: msg });
+    const isGitHubNetworkError = err.message.includes("Could not resolve");
+    const isProviderTimeout = err.message.startsWith("LLM API timed out");
+    const isProviderError = err.message.startsWith("LLM API error") ||
+      err.message.startsWith("All configured providers failed") ||
+      err.message.startsWith("Model returned non-JSON output") ||
+      err instanceof SyntaxError;
+    const failure = isRepoError
+      ? { code: "REPOSITORY_NOT_FOUND", message: "Repository not found. Check the URL and try again." }
+      : isGitHubNetworkError
+        ? { code: "GITHUB_UNREACHABLE", message: "Could not reach GitHub. Check your network and try again." }
+        : isProviderTimeout
+          ? { code: "REVIEW_PROVIDER_TIMEOUT", message: "The review provider took too long to respond. Please try again." }
+          : isProviderError
+            ? { code: "REVIEW_PROVIDER_FAILED", message: "The review provider did not return a usable result. Please try again." }
+            : { code: "PREVIEW_FAILED", message: "The preview could not be completed. Please try again." };
+    return jsonReply(res, 500, { error: failure.message, code: failure.code, requestId });
   } finally {
     previewLimits.finish();
     // Cleanup
