@@ -17,6 +17,21 @@ const FILES_SCHEMA = {
   }
 };
 
+const VISUALS_SCHEMA = {
+  type: "array",
+  maxItems: 3,
+  items: {
+    type: "object",
+    properties: {
+      path: { type: "string", description: "Image path when Polish runs in the same workspace" },
+      label: { type: "string", description: "What the screenshot shows" },
+      viewport: { type: "string", description: "Rendered viewport, for example 390x844" },
+      data: { type: "string", description: "PNG, JPEG, or WebP base64 data. A data URL is preferred." },
+      mediaType: { type: "string", enum: ["image/jpeg", "image/png", "image/webp"], description: "Required when data is raw base64 rather than a data URL" }
+    }
+  }
+};
+
 const PROVIDER_ENUM = ["openai", "anthropic", "openrouter", "groq", "gemini"];
 
 const TOOLS = [
@@ -24,11 +39,12 @@ const TOOLS = [
     name: "polish_review_files",
     title: "polish review",
     description:
-      "Run a design/usability audit over UI files (React, Vue, Svelte, CSS). Reviews against a layered rubric - usability heuristics, design craft (typography, color, spacing, motion, components, writing), and accessibility - returns a 0-100 Polish score using weighted deductions and findings with severity, category, rule, file:line and a concrete fix. Token cost is proportional to the code sent - prefer the highest-traffic screens, not whole codebases. Use on UI code before committing to catch accessibility and design problems.",
+      "Run a design/usability audit over UI files and optional rendered screenshots. Reviews against a layered rubric: usability heuristics, design craft (typography, color, spacing, motion, components, writing, rendered visual QA), and accessibility. Returns a 0-100 Polish score using weighted deductions and findings with severity, category, rule, file:line and a concrete fix. Prefer the highest-traffic screens, not whole codebases. Use screenshots when reviewing visual alignment, responsive states, media crop, or page-to-page consistency.",
     inputSchema: {
       type: "object",
       properties: {
         files: { ...FILES_SCHEMA, description: "UI files to review (up to 20)" },
+        visuals: { ...VISUALS_SCHEMA, description: "Optional rendered screenshots. Attach source files too, so findings can identify the responsible code." },
         context: { type: "string", description: "Short label for this review, e.g. feature or branch name" },
         provider: { type: "string", enum: PROVIDER_ENUM, description: "Override the LLM provider" },
         model: { type: "string", description: "Override the LLM model" }
@@ -45,6 +61,7 @@ const TOOLS = [
       type: "object",
       properties: {
         files: { ...FILES_SCHEMA, description: "The updated UI files (same paths as the original review)" },
+        visuals: { ...VISUALS_SCHEMA, description: "Optional current screenshots for checking visual fixes" },
         issues: {
           type: "array",
           items: { type: "object" },

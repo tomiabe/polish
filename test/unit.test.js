@@ -5,7 +5,10 @@ import { scoreFindings, summarize } from "../lib/scoring.js";
 import { expandGlobs } from "../lib/config.js";
 import { resolveProviderPlan } from "../lib/llm.js";
 import { AGENT_INSTRUCTIONS, writeAgentInstructions } from "../lib/agent.js";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { DEFAULT_RUBRIC_LAYERS, mergeRubrics } from "../lib/rubric.js";
+import { buildReviewSystem, buildReviewUser } from "../lib/prompt.js";
+import { prepareVisuals, renderVisualSummary } from "../lib/visuals.js";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -87,4 +90,50 @@ test("agent instructions are created without overwriting existing files", async 
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("visual evidence prepares local screenshots with useful context", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "polish-visual-"));
+  try {
+    const screenshot = path.join(dir, "explore-mobile.png");
+    await writeFile(screenshot, Buffer.from("visual evidence"));
+    const visuals = await prepareVisuals([
+      { path: screenshot, label: "Explore filters", viewport: "390x844" }
+    ], dir);
+
+    assert.equal(visuals.length, 1);
+    assert.equal(visuals[0].mediaType, "image/png");
+    assert.equal(visuals[0].viewport, "390x844");
+    assert.match(renderVisualSummary(visuals), /Explore filters at 390x844/);
+
+    const prompt = buildReviewUser([{ path: "src/explore.css", content: ".filter { gap: 8px; }" }], visuals);
+    assert.match(prompt, /RENDERED SURFACES/);
+    assert.match(prompt, /Rendered screenshots are attached/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("visual evidence limits unsupported or excessive images", async () => {
+  await assert.rejects(
+    () => prepareVisuals([{ path: "one.gif" }]),
+    /Unsupported visual file type/
+  );
+  await assert.rejects(
+    () => prepareVisuals(Array.from({ length: 4 }, () => ({ data: "a", mediaType: "image/png" }))),
+    /at most 3 visuals/
+  );
+});
+
+test("default craft rubric includes rendered visual QA", () => {
+  const system = buildReviewSystem(mergeRubrics(DEFAULT_RUBRIC_LAYERS));
+  assert.match(system, /\[C8\] Rendered visual QA/);
+  assert.match(system, /Markers, dots, and handles/);
+});
+
+test("writing review treats AI-associated patterns as quality risks, not proof", () => {
+  const system = buildReviewSystem(mergeRubrics(DEFAULT_RUBRIC_LAYERS));
+  assert.match(system, /not proof of a text's origin/);
+  assert.match(system, /product copy editor, not an AI detector/);
+  assert.match(system, /not just X, but Y/);
 });

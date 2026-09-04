@@ -5,6 +5,7 @@ import { expandGlobs, loadConfig } from "../lib/config.js";
 import { reviewFiles, verifyFiles, resolveRubric } from "../lib/review.js";
 import { buildReviewSystem, buildReviewUser } from "../lib/prompt.js";
 import { writeAgentInstructions } from "../lib/agent.js";
+import { prepareVisuals } from "../lib/visuals.js";
 
 const CYAN = "\x1b[36m";
 const RED = "\x1b[31m";
@@ -29,6 +30,7 @@ Options:
   --config <path>   Config file (default: ./.polish.json)
   --json            Output machine-readable receipt JSON for review or verify
   --force           Allow init-agent to replace an existing AGENTS.md
+  --screenshot <path>  Attach a PNG, JPEG, or WebP screenshot. Repeat up to 3 times.
   --max-files <n>   Cap number of files (default 20)
   --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
   --help            Show this help
@@ -39,6 +41,7 @@ Config (.polish.json):
   model:    "model-name"                            (provider default if omitted)
   include:  glob patterns for files                 (default: **/*.{tsx,jsx,vue,svelte,css,html})
   exclude:  glob patterns to skip
+  visuals:  screenshots with optional label and viewport metadata
   rubric:   layers to use: usability|craft|accessibility (default: all)
   principles: custom rubric (see README)
 
@@ -46,7 +49,7 @@ API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ
 }
 
 function parseArgs(argv) {
-  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false };
+  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false, screenshots: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") { opts.help = true; continue; }
@@ -55,6 +58,12 @@ function parseArgs(argv) {
     if (a === "--config") { opts.config = argv[++i]; continue; }
     if (a === "--verify") { opts.verify = argv[++i]; continue; }
     if (a === "--force") { opts.force = true; continue; }
+    if (a === "--screenshot") {
+      const screenshot = argv[++i];
+      if (!screenshot) throw new Error("--screenshot needs an image path.");
+      opts.screenshots.push(screenshot);
+      continue;
+    }
     if (a === "--max-files") { opts.maxFiles = Number(argv[++i]); continue; }
     if (a === "--max-file-bytes") { opts.maxFileBytes = Number(argv[++i]); continue; }
     if (a.startsWith("-")) throw new Error(`Unknown option: ${a}`);
@@ -103,6 +112,7 @@ function printReceipt(receipt) {
   console.log(`\n${GREEN}Polish applied:${RESET} yes`);
   console.log(`${DIM}Run: ${receipt.runId}${RESET}`);
   console.log(`${DIM}Mode: ${receipt.mode}   Files: ${receipt.fileCount}${RESET}`);
+  if (receipt.visualCount > 0) console.log(`${DIM}Rendered screenshots: ${receipt.visualCount}${RESET}`);
 }
 
 function printFindings(findings) {
@@ -123,7 +133,8 @@ async function runReview(cfg, opts, rubric) {
   }
 
   const system = buildReviewSystem(rubric);
-  const user = buildReviewUser(files);
+  const visuals = await prepareVisuals(cfg.visuals, process.cwd());
+  const user = buildReviewUser(files, visuals);
   const tokens = estimateTokens(system) + estimateTokens(user);
   const list = files.map((f) => `  ${f.path} (${(f.content.length / 1024).toFixed(1)} KB)`).join("\n");
 
@@ -133,12 +144,14 @@ async function runReview(cfg, opts, rubric) {
       score: result.score,
       summary: result.assessment,
       findings: result.findings,
+      visualsReviewed: result.visualsReviewed,
       receipt: result.receipt
     }, null, 2));
     return;
   }
 
-  console.log(`${BOLD}polish${RESET} ${DIM}~${tokens.toLocaleString()} estimated tokens${RESET}`);
+  const visualNote = visuals.length > 0 ? ` + ${visuals.length} screenshot${visuals.length === 1 ? "" : "s"}` : "";
+  console.log(`${BOLD}polish${RESET} ${DIM}~${tokens.toLocaleString()} estimated source tokens${visualNote}${RESET}`);
   console.log(list);
 
   if (opts.dryRun) {
@@ -209,6 +222,9 @@ async function main() {
     const cfg = await loadConfig(opts.config);
     if (opts.maxFiles) cfg.maxFiles = opts.maxFiles;
     if (opts.maxFileBytes) cfg.maxFileBytes = opts.maxFileBytes;
+    if (opts.screenshots.length > 0) {
+      cfg.visuals = [...(cfg.visuals ?? []), ...opts.screenshots.map((file) => ({ path: file }))];
+    }
 
     if (opts.verify) {
       await runVerify(cfg, opts.verify, opts.json);

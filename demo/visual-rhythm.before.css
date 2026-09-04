@@ -1,0 +1,65 @@
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --ink: #2a2522;
+  --surface: #f2f5fa;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: sans-serif;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+}
+
+.menu-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.menu-toggle__icon {
+  font-size: 24px;
+}
+
+.mobile-menu {
+  padding: var(--space-4);
+}
+
+.page-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.explore-hero {
+  min-height: 260px;
+  padding: var(--space-6);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.filter-control,
+.filter-select {
+  display: block;
+}
+
+.filter-select {
+  margin-block: var(--space-1);
+}
+
+.plan-choice {
+  margin: 0;
+}

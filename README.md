@@ -1,6 +1,6 @@
 # polish
 
-`polish` is a self-hosted review CLI and MCP server for UI code. It scores usability, design craft, accessibility, and interface writing from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
+`polish` is a self-hosted review CLI and MCP server for UI code and rendered screens. It scores usability, design craft, accessibility, and interface writing from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
 
 Built for designers and engineers reviewing real UI code.
 
@@ -12,7 +12,8 @@ Hosted design review tools are useful, but they run on quotas and monthly limits
 
 ## Features
 
-- Reviews against a layered rubric: usability heuristics, design craft, interface writing, and accessibility. It checks headings, descriptions, labels, and helper text alongside visual and interaction code. The rubric is plain data, so it can be swapped for any design philosophy.
+- Reviews against a layered rubric: usability heuristics, design craft, interface writing, and accessibility. The craft layer includes rendered visual QA when screenshots are supplied. It checks headings, descriptions, labels, and helper text alongside visual and interaction code. The rubric is plain data, so it can be swapped for any design philosophy.
+- Optional rendered screenshots give the review real evidence for alignment, responsive states, media crop, duplicate controls, and visual-system drift. Source files remain part of the review so every finding can point to code.
 - Polish weighted scoring. Critical findings deduct 22, serious findings deduct 9, and moderate findings deduct 3. There is no severity ceiling.
 - Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - Optional provider fallback chains, so you can try multiple APIs in order.
@@ -45,6 +46,7 @@ export OPENROUTER_API_KEY=...
 polish                                   # audit files matched by config globs
 polish src/components src/pages/*.tsx    # audit specific files or directories
 polish --verify findings.json           # re-check that previous findings are fixed
+polish --screenshot artifacts/mobile.png src/explore.html src/styles.css
 polish --dry-run                        # preview what would be sent, no API call
 polish --json                           # machine-readable receipt + findings, for CI or agents
 polish init-agent                       # add the Polish workflow to AGENTS.md
@@ -61,6 +63,9 @@ Create `.polish.json` in a project root. Everything is optional:
   "providers": ["gemini", "groq"],
   "include": ["src/**/*.{ts,tsx,css}"],
   "exclude": ["src/generated/**"],
+  "visuals": [
+    { "path": "artifacts/explore-mobile.png", "label": "Explore filters", "viewport": "390x844" }
+  ],
   "rubric": ["usability", "craft", "accessibility"],
   "maxFiles": 20,
   "maxFileBytes": 100000
@@ -72,6 +77,7 @@ Create `.polish.json` in a project root. Everything is optional:
 - `model` - defaults are `gpt-4o-mini`, `claude-sonnet-4-20250514`, `openai/gpt-4o-mini` (OpenRouter), `llama-3.3-70b-versatile` (Groq), and `gemini-2.5-flash`.
 - `baseUrl` - override the API endpoint, for a proxy or self-hosted gateway.
 - `include` / `exclude` - glob patterns using `**`, `*`, `?`, and `{a,b}`. `node_modules` and `.git` are always skipped.
+- `visuals` - up to three PNG, JPEG, or WebP screenshots. Add a label and viewport so Polish knows which state it is inspecting. Use a vision-capable model for screenshot reviews.
 - `rubric` - which rubric layers to use. `usability` (core heuristics), `craft` (typography, color, spacing, motion, components, writing), `accessibility` (contrast, keyboard, semantics, forms, touch targets, reduced motion). All three are on by default; pick a subset to cut token cost on large reviews.
 - `maxFiles` / `maxFileBytes` - safety caps so a large file does not blow the token budget. Every run prints its estimated token count.
 
@@ -80,7 +86,7 @@ Create `.polish.json` in a project root. Everything is optional:
 The default rubric is three layers:
 
 - **usability** - 10 core heuristics: visibility of system status, match with the real world, user control and freedom, consistency and standards, error prevention, recognition rather than recall, flexibility and efficiency, aesthetic and minimalist design, error diagnosis and recovery, help and documentation.
-- **craft** - design-system discipline: visual craft (concentric radius, optical alignment, no magic numbers, no generic AI-default styling), color and tokens, typography, spacing and layout, motion, component composition, and writing.
+- **craft** - design-system discipline: visual craft (concentric radius, optical alignment, no magic numbers, no generic AI-default styling), color and tokens, typography, spacing and layout, motion, component composition, writing, and rendered visual QA. Screenshot evidence checks icon centring, alignment between nearby controls, form rhythm, duplicate responsive controls, hero crop and width, and consistency across related screens.
 - **accessibility** - checkable requirements: contrast, keyboard support, semantic elements, forms, touch targets, and reduced motion.
 
 The rubric is a data structure. To replace it with your own philosophy, put a `principles` array in `.polish.json`:
@@ -101,6 +107,27 @@ The rubric is a data structure. To replace it with your own philosophy, put a `p
 ```
 
 Rules work best when they are worded as things a model can check ("buttons show a loading state"), not as aesthetic vibes.
+
+## Rendered visual review
+
+Screenshots are an evidence input, not a style preset. Polish does not assume what a travel guide, dashboard, or any other product should look like. It uses the screenshot to verify concrete visual relationships at the viewport you provide, while source code identifies what should be changed.
+
+```bash
+polish \
+  --screenshot artifacts/explore-mobile.png \
+  --screenshot artifacts/explore-desktop.png \
+  src/explore.html src/styles.css src/explore.js
+```
+
+You can repeat `--screenshot` up to three times. Each image must be PNG, JPEG, or WebP and 5 MB or smaller. `visuals` in `.polish.json` accepts the same images with optional `label` and `viewport` metadata. MCP clients can pass file paths when they share the workspace, or image data when they do not.
+
+`demo/VisualRhythm.before.html` and its after pair are a compact regression fixture for explicit icon centring, duplicate mobile actions, form-control rhythm, and full-bleed surfaces.
+
+## Writing review
+
+Polish reviews visible product copy as an editor, not as an AI detector. C7 looks for generic claims, unsupported importance, vague attribution, formulaic contrasts, unnecessary recaps, and other patterns that can make copy feel templated or untrustworthy. It never claims that text was AI-generated.
+
+The guidance is informed by [Wikipedia's signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), used as a list of possible writing symptoms rather than proof of origin. Polish flags a pattern only when it weakens clarity, specificity, or trust, and proposes a concise replacement.
 
 ## Scoring
 
@@ -183,6 +210,7 @@ lib/config.js        config loading, glob expansion, defaults
 lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
+lib/visuals.js       screenshot validation and provider-ready visual evidence
 lib/agent.js         repo-local instructions for coding agents
 lib/scoring.js       weighted scoring and summaries
 demo/                before/after demo components (ProfileCard, SettingsForm)

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Visual rhythm regression fixture</title>
+    <link rel="stylesheet" href="visual-rhythm.after.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="/">Explorer</a>
+      <button class="menu-toggle" aria-label="Open menu">
+        <span class="menu-toggle__icon" aria-hidden="true">☰</span>
+      </button>
+    </header>
+
+    <aside class="mobile-menu" aria-label="Mobile navigation">
+      <button class="menu-close">Close menu</button>
+    </aside>
+
+    <main>
+      <section class="explore-hero">
+        <div class="hero-content">
+          <h1>Find your next plan</h1>
+        </div>
+      </section>
+
+      <form class="explore-filters">
+        <label class="filter-control" for="area">Area</label>
+        <select id="area" class="filter-select">
+          <option>Anywhere</option>
+          <option>Central Business District</option>
+        </select>
+
+        <fieldset class="plan-choice">
+          <legend>What is the plan?</legend>
+          <label><input type="checkbox"> A quiet meal</label>
+          <label><input type="checkbox"> A place to linger</label>
+        </fieldset>
+      </form>
+    </main>
+  </body>
+</html>

@@ -4,7 +4,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { promisify } from "node:util";
 import path from "node:path";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 const execFileP = promisify(execFile);
 
@@ -170,4 +171,47 @@ test("CLI falls back from OpenAI to Gemini", async () => {
   const clean = stdout.replace(/\x1b\[[0-9;]*m/g, "");
   assert.match(clean, /Score: 69\/100/, "fallback result scored");
   assert.match(clean, /Clickable div is not keyboard accessible|Destructive action without confirmation/, "gemini findings shown");
+});
+
+test("CLI sends screenshots as visual evidence to an OpenAI-compatible provider", async () => {
+  const server = http.createServer((req, res) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      const parsed = JSON.parse(body);
+      const content = parsed.messages?.[1]?.content;
+      assert.ok(Array.isArray(content), "visual review uses multimodal user content");
+      assert.equal(content[0].type, "text");
+      assert.equal(content[1].type, "image_url");
+      assert.match(content[1].image_url.url, /^data:image\/png;base64,/);
+
+      res.setHeader("content-type", "application/json");
+      res.end(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify({ summary: "Visual evidence reviewed.", findings: [] }) } }]
+      }));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, resolve));
+  const port = server.address().port;
+  const dir = mkdtempSync(path.join(tmpdir(), "polish-visual-int-"));
+  const configPath = path.join(dir, "config.json");
+  const screenshotPath = path.join(dir, "mobile.png");
+  writeFileSync(screenshotPath, Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9JzLAAAAAASUVORK5CYII=", "base64"));
+  writeFileSync(configPath, JSON.stringify({ provider: "openai", model: "gpt-test", baseUrl: `http://127.0.0.1:${port}` }));
+
+  const cwd = path.join(import.meta.dirname, "..");
+  const env = { ...process.env, OPENAI_API_KEY: "test-key" };
+  try {
+    const result = await execFileP(
+      process.execPath,
+      [path.join(cwd, "bin/polish.js"), "--config", configPath, "--json", "--screenshot", screenshotPath, "test/fixtures/*.jsx"],
+      { cwd, env }
+    );
+    const review = JSON.parse(result.stdout);
+    assert.equal(review.receipt.visualCount, 1);
+    assert.deepEqual(review.visualsReviewed, [{ path: screenshotPath, label: null, viewport: null }]);
+  } finally {
+    server.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

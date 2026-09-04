@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>polish: self-hosted UI review for code, copy, and accessibility</title>
-<meta name="description" content="polish reviews UI code, interface writing, and accessibility with your own LLM API key. Get a weighted 0-100 score, file-level findings, concrete fixes, and agent receipts from a CLI or MCP server." />
+<title>polish: self-hosted UI review for code, copy, and rendered screens</title>
+<meta name="description" content="polish reviews UI code, rendered screens, interface writing, and accessibility with your own LLM API key. Get a weighted 0-100 score, file-level findings, concrete fixes, and agent receipts from a CLI or MCP server." />
 <link rel="canonical" href="https://tomiabe.github.io/polish/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="polish" />
 <meta property="og:url" content="https://tomiabe.github.io/polish/" />
-<meta property="og:title" content="polish_ - self-hosted UI review for code and copy" />
-<meta property="og:description" content="Built for designers and engineers reviewing real UI code. Audit usability, craft, accessibility, and interface writing with your own LLM key and concrete file-level fixes." />
+<meta property="og:title" content="polish_ - self-hosted UI review for code, copy, and screens" />
+<meta property="og:description" content="Built for designers and engineers reviewing real UI code and rendered screens. Audit usability, craft, accessibility, and writing with your own LLM key and concrete file-level fixes." />
 <meta property="og:image" content="https://tomiabe.github.io/polish/og-dark.png" />
 <meta property="og:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="polish_ - self-hosted UI review for code and copy" />
-<meta name="twitter:description" content="Built for designers and engineers reviewing real UI code. Audit usability, craft, accessibility, and interface writing with your own LLM key and concrete file-level fixes." />
+<meta name="twitter:title" content="polish_ - self-hosted UI review for code, copy, and screens" />
+<meta name="twitter:description" content="Built for designers and engineers reviewing real UI code and rendered screens. Audit usability, craft, accessibility, and writing with your own LLM key and concrete file-level fixes." />
 <meta name="twitter:image" content="https://tomiabe.github.io/polish/og-dark.png" />
 <meta name="twitter:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
 <!-- Google tag (gtag.js) -->
@@ -773,8 +773,8 @@
     <div class="wrap">
       <h1>Ship UI a senior designer would sign off on.</h1>
       <p class="lede">
-        <span class="wordmark">polish_</span> audits real UI code for usability, design craft, and accessibility
-        with a self‑hosted Node script, your own API key, no bots in your repo, and no quotas.
+        <span class="wordmark">polish_</span> audits UI code and rendered screens for usability, design craft, writing, and accessibility
+        with a self-hosted Node script, your own API key, no bots in your repo, and no quotas.
       </p>
       <div class="cta">
         <a class="p-btn primary" href="#install" data-analytics-event="polish_install_click" data-analytics-placement="hero"><i class="hgi-stroke hgi-console"></i>Get started</a>
@@ -789,13 +789,13 @@
         </div>
         <div class="stat">
           <i class="hgi-stroke hgi-sparkles"></i>
-          <b>110</b>
+          <b>136</b>
           <span>checkable rules</span>
         </div>
         <div class="stat">
           <i class="hgi-stroke hgi-cpu"></i>
-          <b>0</b>
-          <span>dependencies</span>
+          <b>5</b>
+          <span>model providers</span>
         </div>
         <div class="stat">
           <i class="hgi-stroke hgi-infinity-01"></i>
@@ -1071,8 +1071,8 @@
     <div class="wrap">
       <h2>The rubric is data. Swap it.</h2>
       <p class="sub">
-        Three layers cover what senior designers check in code. Not screenshots, not vibes.
-        Every rule is written so a model can verify it against source, and the whole thing is plain data,
+        Three layers cover what senior designers check in code. Source comes first, with optional screenshots when visual proof matters.
+        Every rule is written so a model can verify it against source and rendered evidence, and the whole thing is plain data,
         so you can replace it with your own design philosophy.
       </p>
       <div class="layers">
@@ -1089,10 +1089,10 @@
         <div class="layer">
           <div class="icon"><i class="hgi-stroke hgi-sparkles"></i></div>
           <h3>Design craft</h3>
-          <p>Design-system discipline and production polish: tokens, type, spacing, motion, components, and the words on the buttons. Seven categories, C1 to C7.</p>
+          <p>Design-system discipline and production polish: tokens, type, spacing, motion, components, visible writing, and rendered visual QA. Eight categories, C1 to C8.</p>
           <ul>
             <li>Visual craft</li><li>Color and tokens</li><li>Typography</li><li>Spacing and layout</li>
-            <li>Motion</li><li>Components</li><li>Writing</li>
+            <li>Motion</li><li>Components</li><li>Writing</li><li>Rendered visual QA</li>
           </ul>
         </div>
         <div class="layer">
@@ -1181,7 +1181,7 @@
       <h2>Get started in four steps</h2>
       <p class="sub">
         Works with Groq, OpenAI, Anthropic, Gemini, OpenRouter, or any OpenAI-compatible endpoint.
-        Use one provider per run or set a fallback chain. Polish reviews app UI, including the words users see.
+        Use one provider per run or set a fallback chain. Polish reviews app UI source, rendered screenshots, and the words users see.
         It is not a general code quality or backend linter.
       </p>
       <div class="provider-grid" role="list" aria-label="Supported providers">
@@ -1238,6 +1238,7 @@ export GROQ_API_KEY=...        <span class="c"># or OPENAI / ANTHROPIC / GEMINI 
             <pre>polish                                   <span class="c"># audit files matched by config globs</span>
 polish src/components src/pages/*.tsx    <span class="c"># or specific files</span>
 polish --verify findings.json           <span class="c"># re-check that fixes landed</span>
+polish --screenshot artifacts/mobile.png src/explore.html src/styles.css
 polish --json                           <span class="c"># machine-readable receipt, for CI or agents</span>
 polish init-agent                       <span class="c"># write the agent review loop</span>
 polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
@@ -1256,6 +1257,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
   <span class="g">"providers"</span>: ["gemini", "groq"],
   <span class="g">"rubric"</span>: ["usability", "craft", "accessibility"],
   <span class="g">"include"</span>: ["src/**/*.{tsx,css}"],
+  <span class="g">"visuals"</span>: [{ <span class="g">"path"</span>: "artifacts/mobile.png", <span class="g">"viewport"</span>: "390x844" }],
   <span class="g">"maxFiles"</span>: 20
 }</pre>
           </div>
@@ -1273,13 +1275,13 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       <h2>Same engine, one more door: MCP</h2>
       <p class="sub">
         Polish also runs as an MCP server over stdio. Coding agents call the same engine as the CLI,
-        with identical prompts, scoring, findings, and machine-readable receipts.
+        with identical rubric, source evidence, optional screenshots, scoring, findings, and machine-readable receipts.
       </p>
       <div class="mcp-grid">
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-bot"></i></div>
           <h3>polish_review_files</h3>
-          <p>Review UI files by content. Returns a score, counts, assessment, receipt, and findings with severity, category, file:line, and a fix.</p>
+          <p>Review UI source and optional screenshots. Returns a score, counts, assessment, receipt, and findings with severity, category, file:line, and a fix.</p>
         </div>
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>
@@ -1298,7 +1300,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
     <div class="wrap">
       <h2>Agent-ready by default</h2>
       <p class="sub">
-        Give your coding agent a repeatable UI review loop. Run Polish, read the receipt,
+        Give your coding agent a repeatable UI review loop. Add current screenshots when visual evidence matters, read the receipt,
         apply the highest-impact fixes, then verify the result.
       </p>
       <div class="layers">
@@ -1310,7 +1312,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
         <div class="layer">
           <div class="icon"><i class="hgi-stroke hgi-sparkles"></i></div>
           <h3>Machine-readable receipts</h3>
-          <p>Every run emits a receipt with a run ID, score, files reviewed, and category breakdown. <code>--json</code> outputs the full receipt for CI pipelines and agent loops.</p>
+          <p>Every run emits a receipt with a run ID, score, files and screenshots reviewed, and category breakdown. <code>--json</code> outputs the full receipt for CI pipelines and agent loops.</p>
         </div>
         <div class="layer">
           <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>

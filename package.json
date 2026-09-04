@@ -1,7 +1,7 @@
 {
   "name": "polish",
   "version": "0.1.0",
-  "description": "Self-hosted UI review CLI and MCP server for usability, craft, accessibility, and interface writing.",
+  "description": "Self-hosted UI review CLI and MCP server for usability, craft, accessibility, writing, and rendered screens.",
   "type": "module",
   "bin": {
     "polish": "./bin/polish.js"
