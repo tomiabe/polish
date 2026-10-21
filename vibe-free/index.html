@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" data-color-mode="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>vibe-free: a drop-in taste contract for AI-built UI</title>
+<meta name="description" content="vibe-free is one rules file that tells your coding agent what good taste looks like before it writes a line of UI. Eight rules, the links from Des Traynor's thread, and a review loop that ends in polish." />
+<meta name="color-scheme" content="light dark" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="vibe-free: a drop-in taste contract for AI-built UI" />
+<meta property="og:description" content="One file. Eight rules. Ends with a review loop. Stop your AI-built UI from reading as AI-built." />
+<meta property="og:url" content="https://polish.tomiabe.com/vibe-free/" />
+<link rel="canonical" href="https://polish.tomiabe.com/vibe-free/" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+<link rel="stylesheet" href="style.css" />
+<script>
+  (function () {
+    var choice = localStorage.getItem("vibe-free-theme") || "system";
+    function resolve(c) {
+      if (c !== "system") return c;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    document.documentElement.setAttribute("data-color-mode", resolve(choice));
+  })();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="nav" aria-label="Primary">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">vibe-free<span class="cursor">_</span><span class="by">by polish</span></a>
+    <div class="nav-links">
+      <a href="#tell">The tell</a>
+      <a href="#rules">Rules</a>
+      <a href="#use">Use</a>
+      <a href="#loop">Loop</a>
+      <a href="#origin">Origin</a>
+    </div>
+    <div class="nav-right">
+      <a class="p-btn" href="https://github.com/tomiabe/polish/tree/main/vibe-free" target="_blank" rel="noopener noreferrer" style="min-height:40px;font-size:14px;padding:0 14px;">
+        <i class="hgi-stroke hgi-github"></i>GitHub
+      </a>
+      <div class="theme-switch" role="group" aria-label="Color theme">
+        <button type="button" data-theme="light" aria-pressed="false" title="Morning (light)">
+          <i class="hgi-stroke hgi-sun-01"></i><span class="t-label">Morning</span>
+        </button>
+        <button type="button" data-theme="dark" aria-pressed="false" title="Noon (dark)">
+          <i class="hgi-stroke hgi-moon-01"></i><span class="t-label">Noon</span>
+        </button>
+        <button type="button" data-theme="system" aria-pressed="false" title="Match your system">
+          <i class="hgi-stroke hgi-sliders-horizontal"></i><span class="t-label">System</span>
+        </button>
+      </div>
+      <button class="nav-burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
+        <i class="hgi-stroke hgi-menu-01"></i>
+      </button>
+    </div>
+  </div>
+  <div class="nav-menu" id="nav-menu">
+    <a href="#tell">The tell</a>
+    <a href="#rules">Rules</a>
+    <a href="#use">Use</a>
+    <a href="#loop">Loop</a>
+    <a href="#origin">Origin</a>
+    <a href="https://github.com/tomiabe/polish/tree/main/vibe-free" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </div>
+</nav>
+
+<main id="main">
+
+  <!-- ============ hero ============ -->
+  <header class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div>
+        <h1>Ship AI&#8209;built UI that doesn't read as AI&#8209;built.</h1>
+        <p class="lede">
+          <span class="wordmark">vibe-free</span> is a drop-in taste contract for Cursor, Claude Code, and v0.
+          One file. Eight rules. Ends with a review loop.
+        </p>
+        <div class="cta">
+          <button class="p-btn primary" type="button" data-copy="#src-prompt">
+            <i class="hgi-stroke hgi-copy"></i>Copy prompt
+          </button>
+          <button class="p-btn" type="button" data-copy="#src-agents">
+            <i class="hgi-stroke hgi-download-01"></i>Copy AGENTS.md
+          </button>
+          <a class="p-btn" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer">
+            <i class="hgi-stroke hgi-github"></i>Star on GitHub
+          </a>
+        </div>
+        <div class="stats">
+          <div class="stat"><i class="hgi-stroke hgi-layers-01"></i><b>8</b><span>rules in the contract</span></div>
+          <div class="stat"><i class="hgi-stroke hgi-file-01"></i><b>1</b><span>file to drop in</span></div>
+          <div class="stat"><i class="hgi-stroke hgi-code-square"></i><b>0</b><span>config needed</span></div>
+          <div class="stat"><i class="hgi-stroke hgi-flash"></i><b>2 min</b><span>to set up</span></div>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-bar" role="group" aria-label="Choose file to preview">
+          <button class="panel-tab" type="button" data-source="#src-prompt" aria-pressed="true">PROMPT.md</button>
+          <button class="panel-tab" type="button" data-source="#src-agents" aria-pressed="false">AGENTS.md</button>
+          <button class="copy-btn" id="panel-copy" type="button" data-copy="#src-prompt">
+            <i class="hgi-stroke hgi-copy"></i>Copy
+          </button>
+        </div>
+        <pre><code id="hero-code">You are a senior product designer-engineer. Build this UI so it reads as deliberate and human, not generated. No purple or blue gradients, no default hero plus three feature cards, no emoji icons, no lorem copy.</code></pre>
+        <div class="panel-foot">Saves as AGENTS.md, CLAUDE.md, or .cursorrules at your repo root.</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ the tell ============ -->
+  <section id="tell" class="alt">
+    <div class="wrap">
+      <h2>Same component. Two prompts.</h2>
+      <p class="sub">
+        Generic output is not a talent problem. It is a missing instructions problem.
+        Flip each switch and watch what changes when the model gets a contract instead of a vibe.
+      </p>
+
+      <article class="sample" data-state="unprompted">
+        <div class="sample-head">
+          <div>
+            <h3>Marketing hero</h3>
+            <p class="sample-note">landing page / first screen</p>
+          </div>
+          <div class="live-toggle" role="group" aria-label="Marketing hero prompt">
+            <button type="button" data-state-btn="unprompted" aria-pressed="true">Unprompted</button>
+            <button type="button" data-state-btn="free" aria-pressed="false">vibe-free</button>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="dcard">
+            <span class="d-badge">
+              <span class="ic-emoji" aria-hidden="true">✨</span><i class="hgi-stroke hgi-sparkles"></i>
+              <span data-unprompted="AI Powered" data-free="Self-hosted, no quotas">AI Powered</span>
+            </span>
+            <h4 class="d-title" data-unprompted="Supercharge your workflow" data-free="Audit every screen before it ships">Supercharge your workflow</h4>
+            <p class="d-body" data-unprompted="Seamless. Powerful. Beautiful. Unlock your potential today with our all-in-one platform." data-free="Point polish at your UI files. Get a 0 to 100 score, findings at file:line, and a concrete fix for each one.">Seamless. Powerful. Beautiful. Unlock your potential today with our all-in-one platform.</p>
+            <ul class="d-feats">
+              <li>
+                <span class="ic-emoji" aria-hidden="true">⚡</span><i class="hgi-stroke hgi-eye"></i>
+                <span data-unprompted="Lightning fast" data-free="Usability heuristics">Lightning fast</span>
+              </li>
+              <li>
+                <span class="ic-emoji" aria-hidden="true">🎨</span><i class="hgi-stroke hgi-paint-brush-01"></i>
+                <span data-unprompted="Stunning designs" data-free="Design craft">Stunning designs</span>
+              </li>
+              <li>
+                <span class="ic-emoji" aria-hidden="true">🎯</span><i class="hgi-stroke hgi-text"></i>
+                <span data-unprompted="AI-powered insights" data-free="Interface writing">AI-powered insights</span>
+              </li>
+            </ul>
+            <div class="d-actions">
+              <button class="d-btn primary" type="button" data-unprompted="🚀 Get Started Free" data-free="Run polish">🚀 Get Started Free</button>
+              <button class="d-btn ghost" type="button" data-unprompted="Learn More" data-free="View the rubric">Learn More</button>
+            </div>
+            <p class="d-proof" data-unprompted="⭐⭐⭐⭐⭐ Loved by 10,000+ happy users" data-free="Runs locally with your own API key. No quotas.">⭐⭐⭐⭐⭐ Loved by 10,000+ happy users</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="sample" data-state="unprompted">
+        <div class="sample-head">
+          <div>
+            <h3>Dashboard panel</h3>
+            <p class="sample-note">product UI / logged in view</p>
+          </div>
+          <div class="live-toggle" role="group" aria-label="Dashboard panel prompt">
+            <button type="button" data-state-btn="unprompted" aria-pressed="true">Unprompted</button>
+            <button type="button" data-state-btn="free" aria-pressed="false">vibe-free</button>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="dcard">
+            <div class="d-head-row">
+              <b data-unprompted="Weekly Progress 📊" data-free="Review history">Weekly Progress 📊</b>
+              <span class="d-metric" data-unprompted="150%" data-free="78 / 100">150%</span>
+            </div>
+            <div class="d-stats">
+              <div class="d-stat"><b data-unprompted="🔥" data-free="18">🔥</b><span data-unprompted="Day streak" data-free="files reviewed">Day streak</span></div>
+              <div class="d-stat"><b data-unprompted="⚡" data-free="6">⚡</b><span data-unprompted="Tasks crushed" data-free="findings fixed">Tasks crushed</span></div>
+              <div class="d-stat"><b data-unprompted="🎉" data-free="1">🎉</b><span data-unprompted="Nailed it" data-free="critical left">Nailed it</span></div>
+            </div>
+            <ul class="d-rows">
+              <li>
+                <span class="ic-emoji" aria-hidden="true">✅</span><i class="hgi-stroke hgi-checkmark-circle-01"></i>
+                <span data-unprompted="Ship the landing page" data-free="Hero copy pass">Ship the landing page</span>
+                <span class="d-when">2h</span>
+              </li>
+              <li>
+                <span class="ic-emoji" aria-hidden="true">⏳</span><i class="hgi-stroke hgi-add-circle"></i>
+                <span data-unprompted="Polish the copy" data-free="Tablet layout">Polish the copy</span>
+                <span class="d-when">5h</span>
+              </li>
+              <li>
+                <span class="ic-emoji" aria-hidden="true">🚀</span><i class="hgi-stroke hgi-refresh"></i>
+                <span data-unprompted="Crush Q4 goals" data-free="Contrast fix on buttons">Crush Q4 goals</span>
+                <span class="d-when">1d</span>
+              </li>
+            </ul>
+            <div class="d-meter"><i></i></div>
+            <p class="d-meter-note" data-unprompted="Crushing it! 62% of the way to your goal" data-free="14 of 18 checks passing">Crushing it! 62% of the way to your goal</p>
+            <div class="d-actions">
+              <button class="d-btn primary" type="button" data-unprompted="🚀 Upgrade to Pro" data-free="Open the report">🚀 Upgrade to Pro</button>
+              <button class="d-btn ghost" type="button" data-unprompted="Invite Team" data-free="Re-run polish">Invite Team</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <div class="tells-head">
+        <h3>The seven tells</h3>
+        <span class="tell-count"><b id="tell-n">0</b> of 7 found</span>
+      </div>
+      <ul class="tells" id="tells">
+        <li><button class="tell critical" type="button" aria-pressed="false"><span class="sev">critical</span>Purple or blue gradient with glow</button></li>
+        <li><button class="tell critical" type="button" aria-pressed="false"><span class="sev">critical</span>Neon on near-black, just because</button></li>
+        <li><button class="tell serious" type="button" aria-pressed="false"><span class="sev">serious</span>Emoji used as UI icons</button></li>
+        <li><button class="tell serious" type="button" aria-pressed="false"><span class="sev">serious</span>Hero plus three feature cards</button></li>
+        <li><button class="tell serious" type="button" aria-pressed="false"><span class="sev">serious</span>Fake testimonials and lorem copy</button></li>
+        <li><button class="tell moderate" type="button" aria-pressed="false"><span class="sev">moderate</span>Default fonts, no type scale</button></li>
+        <li><button class="tell moderate" type="button" aria-pressed="false"><span class="sev">moderate</span>Em dashes, italics, eyebrow labels</button></li>
+      </ul>
+      <div class="tell-cta" id="tell-cta">
+        <span>That is exactly what the contract is for.</span>
+        <a class="p-btn" href="#rules">See the eight rules<i class="hgi-stroke hgi-arrow-right-01"></i></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ rules ============ -->
+  <section id="rules">
+    <div class="wrap">
+      <div class="sub-row">
+        <div>
+          <h2>Eight rules, one file.</h2>
+          <p class="sub">The full contract lives in AGENTS.md. Each rule carries the resource the model gets pointed at.</p>
+        </div>
+        <button class="p-btn primary" type="button" data-copy="#src-agents" style="margin-bottom:32px;">
+          <i class="hgi-stroke hgi-copy"></i>Copy AGENTS.md
+        </button>
+      </div>
+
+      <div class="rules">
+        <details class="rule" open>
+          <summary>
+            <span class="num">0</span>
+            <span class="title">Visual direction comes first</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>Before any code, write one paragraph: where the palette comes from, the dominant accent, the texture and personality, and three things this will not look like. Read it back before every screen. Generic output is the default. Specificity is the only known fix.</p>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">1</span>
+            <span class="title">Design contract</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>One accent, two typefaces, one spacing scale, one radius set, one icon family. Pull the palette from the identity. Build on a named component system instead of hand-rolling what it already gives you.</p>
+            <div class="rule-links">
+              <a href="https://ui.shadcn.com" target="_blank" rel="noopener noreferrer">shadcn/ui</a>
+              <a href="https://phosphoricons.com" target="_blank" rel="noopener noreferrer">Phosphor Icons</a>
+              <a href="https://github.com/LeulAria/Aria-Icons" target="_blank" rel="noopener noreferrer">Aria Icons</a>
+            </div>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">2</span>
+            <span class="title">Structure and composition</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>No default hero plus three feature cards unless the content demands it. Real content only: real names, real numbers, real screenshots. Give the page an order to be read in and vary the shape of every section.</p>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">3</span>
+            <span class="title">Motion</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>150 to 250ms, eased, purposeful. Animate on state change and scroll reveal, never on every element. Motion clarifies, it does not decorate. Easy scroll, and respect reduced motion.</p>
+            <div class="rule-links">
+              <a href="https://transitions.dev" target="_blank" rel="noopener noreferrer">Transitions.dev</a>
+              <a href="https://beui.dev" target="_blank" rel="noopener noreferrer">beUI</a>
+              <a href="https://emilkowal.ski/skill" target="_blank" rel="noopener noreferrer">Emil Kowalski skill</a>
+            </div>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">4</span>
+            <span class="title">Sound</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>Confirmations and completions only. Routine interactions stay silent. Overused sound reads as gimmicky, which is where the thread landed on it too.</p>
+            <div class="rule-links">
+              <a href="https://cuelume-site.pages.dev" target="_blank" rel="noopener noreferrer">Cuelume</a>
+            </div>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">5</span>
+            <span class="title">Copy</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>Cut the signs of AI writing, the superlative stacks, and the throat-clearing intros. No em dashes or en dashes, nothing in italics for emphasis, no eyebrow labels. Cut 20 percent at the end. Shorter reads more human.</p>
+            <div class="rule-links">
+              <a href="https://en.wikipedia.org/Wikipedia:Signs_of_AI_writing" target="_blank" rel="noopener noreferrer">Signs of AI writing</a>
+            </div>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">6</span>
+            <span class="title">Responsive</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>Check at 375, 768, and 1280 before anything is called done. Navigation, tables, dense sections, forms, and the footer all count, not only the hero.</p>
+          </div>
+        </details>
+
+        <details class="rule">
+          <summary>
+            <span class="num">7</span>
+            <span class="title">Review loop, not a final gate</span>
+            <i class="hgi-stroke hgi-arrow-down-01 chev"></i>
+          </summary>
+          <div class="body">
+            <p>Audit after structure, after the visual pass, after the copy pass. Then run polish against the code, the copy, and the screens, and fix what it flags before shipping.</p>
+            <div class="rule-links">
+              <a href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer">polish</a>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ how to use ============ -->
+  <section id="use" class="alt">
+    <div class="wrap">
+      <h2>How to use it</h2>
+      <p class="sub">Three steps in any agent that reads a rules file.</p>
+
+      <div class="tabs" role="tablist" aria-label="Choose your agent">
+        <button role="tab" type="button" aria-selected="true" aria-controls="panel-cursor" id="tab-cursor">Cursor</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="panel-claude" id="tab-claude">Claude Code</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="panel-v0" id="tab-v0">v0</button>
+        <button role="tab" type="button" aria-selected="false" aria-controls="panel-chatgpt" id="tab-chatgpt">ChatGPT</button>
+      </div>
+
+      <div class="tab-panel active" id="panel-cursor" role="tabpanel" aria-labelledby="tab-cursor">
+        <div class="steps">
+          <div class="step">
+            <div class="step-head"><span class="num">01</span><i class="hgi-stroke hgi-copy"></i><h3>Paste the prompt</h3></div>
+            <p>Send it as the first message so the contract is in context before the first component exists.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>Before you write any code, follow the vibe-free contract below for every screen you build.</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">02</span><i class="hgi-stroke hgi-file-01"></i><h3>Drop the rules file in</h3></div>
+            <p>Save AGENTS.md as <code>.cursorrules</code> at the repo root so every new chat inherits it.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>.cursorrules</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">03</span><i class="hgi-stroke hgi-command-line"></i><h3>Run polish when the build is done</h3></div>
+            <p>The contract prevents the generic look. polish audits what actually shipped: usability, craft, writing, and accessibility, scored 0 to 100.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>polish src/ --screenshot artifacts/mobile.png</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-claude" role="tabpanel" aria-labelledby="tab-claude">
+        <div class="steps">
+          <div class="step">
+            <div class="step-head"><span class="num">01</span><i class="hgi-stroke hgi-copy"></i><h3>Paste the prompt</h3></div>
+            <p>Open the session with it. Claude Code reads the whole file, so AGENTS.md alone is enough on the next run.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>Before you write any code, follow the vibe-free contract in AGENTS.md for every screen you build.</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">02</span><i class="hgi-stroke hgi-file-01"></i><h3>Drop the rules file in</h3></div>
+            <p>Save it as <code>CLAUDE.md</code> or <code>AGENTS.md</code> at the repo root, then run <code>polish init-agent</code> to wire the review workflow.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>CLAUDE.md</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">03</span><i class="hgi-stroke hgi-command-line"></i><h3>Run polish when the build is done</h3></div>
+            <p>Exit code 1 on critical findings means your pre-commit hook can block the ship for you.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>polish --verify findings.json</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-v0" role="tabpanel" aria-labelledby="tab-v0">
+        <div class="steps">
+          <div class="step">
+            <div class="step-head"><span class="num">01</span><i class="hgi-stroke hgi-copy"></i><h3>Paste the prompt</h3></div>
+            <p>Put it in the prompt field with your description, so the visual direction and the rules land before generation.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>Follow the vibe-free contract below for this build: one accent, one icon family, two typefaces, no gradients.</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">02</span><i class="hgi-stroke hgi-file-01"></i><h3>Attach the rules file</h3></div>
+            <p>When you connect a repo, commit <code>AGENTS.md</code> so the contract rides along with every deployment.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>AGENTS.md</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">03</span><i class="hgi-stroke hgi-command-line"></i><h3>Run polish on the deployed page</h3></div>
+            <p>Pull the built HTML and CSS locally, add a screenshot of each breakpoint, and let the loop close.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>polish index.html styles.css --screenshot artifacts/desktop.png</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="panel-chatgpt" role="tabpanel" aria-labelledby="tab-chatgpt">
+        <div class="steps">
+          <div class="step">
+            <div class="step-head"><span class="num">01</span><i class="hgi-stroke hgi-copy"></i><h3>Paste the prompt</h3></div>
+            <p>First message of the chat, before any wireframe or component request.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>You are a senior product designer-engineer. Follow the vibe-free contract below for every screen you produce.</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">02</span><i class="hgi-stroke hgi-file-01"></i><h3>Keep it in the project</h3></div>
+            <p>Add AGENTS.md to Project custom instructions so new chats in the project start with the contract.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>AGENTS.md</code></pre>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-head"><span class="num">03</span><i class="hgi-stroke hgi-command-line"></i><h3>Run polish on what you export</h3></div>
+            <p>Copy the generated code into your project, then audit it locally where the review loop lives.</p>
+            <div class="code-block">
+              <button class="copy-btn" type="button" data-copy="self"><i class="hgi-stroke hgi-copy"></i>Copy</button>
+              <pre><code>polish src/components src/pages/*.tsx</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ use cases ============ -->
+  <section id="cases">
+    <div class="wrap">
+      <h2>Where it earns its keep</h2>
+      <p class="sub">Same contract, different surfaces.</p>
+      <div class="cases">
+        <article class="case wide">
+          <div class="icon"><i class="hgi-stroke hgi-browser"></i></div>
+          <h3>Landing pages</h3>
+          <p>The first screen everyone judges. One accent, real copy, motion that explains. The gradient hero has nowhere to hide once the visual direction paragraph is written first.</p>
+          <span class="tag">hero / pricing / waitlist</span>
+        </article>
+        <article class="case wide">
+          <div class="icon"><i class="hgi-stroke hgi-briefcase-01"></i></div>
+          <h3>Client work</h3>
+          <p>Start every project from the same file, so a week of client work still looks like one person made deliberate decisions. The contract is the deliverable before the code is.</p>
+          <span class="tag">agencies / freelancers</span>
+        </article>
+        <article class="case narrow">
+          <div class="icon"><i class="hgi-stroke hgi-dashboard-square-01"></i></div>
+          <h3>Dashboards</h3>
+          <p>Dense screens with tables, states, and empty views, which models usually fake.</p>
+          <span class="tag">SaaS / admin</span>
+        </article>
+        <article class="case narrow">
+          <div class="icon"><i class="hgi-stroke hgi-layout-01"></i></div>
+          <h3>Portfolios</h3>
+          <p>Taste is the product here. The rules keep it consistent across every case study.</p>
+          <span class="tag">designers who code</span>
+        </article>
+        <article class="case narrow">
+          <div class="icon"><i class="hgi-stroke hgi-wrench-01"></i></div>
+          <h3>Internal tools</h3>
+          <p>Nobody looks at these twice, which is exactly why they end up reading as generated.</p>
+          <span class="tag">ops / tooling</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ the loop ============ -->
+  <section id="loop" class="alt">
+    <div class="wrap">
+      <h2>Prevent, then verify.</h2>
+      <p class="sub">
+        vibe-free sets the rules before the model writes code. polish audits the screen that actually shipped.
+        One stops the generic look, the other proves it is gone.
+      </p>
+
+      <div class="loop">
+        <div class="loop-step key">
+          <i class="hgi-stroke hgi-shield-01"></i>
+          <div class="who">vibe-free</div>
+          <b>Contract before code</b>
+          <span>Eight rules in the agent's context.</span>
+        </div>
+        <div class="loop-arrow"><i class="hgi-stroke hgi-arrow-right-01"></i></div>
+        <div class="loop-step">
+          <i class="hgi-stroke hgi-code"></i>
+          <div class="who">agent</div>
+          <b>Build</b>
+          <span>Cursor, Claude Code, v0, or ChatGPT.</span>
+        </div>
+        <div class="loop-arrow"><i class="hgi-stroke hgi-arrow-right-01"></i></div>
+        <div class="loop-step key">
+          <i class="hgi-stroke hgi-eye"></i>
+          <div class="who">polish</div>
+          <b>Audit the output</b>
+          <span>Code, copy, and screenshots scored 0 to 100.</span>
+        </div>
+        <div class="loop-arrow"><i class="hgi-stroke hgi-arrow-right-01"></i></div>
+        <div class="loop-step">
+          <i class="hgi-stroke hgi-wrench-01"></i>
+          <div class="who">you</div>
+          <b>Fix findings</b>
+          <span>File and line, with a concrete fix.</span>
+        </div>
+        <div class="loop-arrow"><i class="hgi-stroke hgi-arrow-right-01"></i></div>
+        <div class="loop-step">
+          <i class="hgi-stroke hgi-rocket-01"></i>
+          <div class="who">ship</div>
+          <b>Ship</b>
+          <span>Exit code 1 gates CI on criticals.</span>
+        </div>
+      </div>
+
+      <div class="loop-cta">
+        <a class="p-btn primary" href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer">
+          <i class="hgi-stroke hgi-console"></i>Run polish
+        </a>
+        <a class="p-btn" href="https://tomiabe.github.io/polish/" target="_blank" rel="noopener noreferrer">
+          <i class="hgi-stroke hgi-arrow-right-01"></i>See a sample report
+        </a>
+      </div>
+      <p class="loop-note">polish runs locally with your own API key. No bots in your repo, no monthly quota.</p>
+    </div>
+  </section>
+
+  <!-- ============ origin ============ -->
+  <section id="origin">
+    <div class="wrap">
+      <h2>Where this came from</h2>
+      <blockquote class="quote">
+        <p>Someone should tie this whole thing up into a clean prompt now.</p>
+        <span class="who">
+          <a href="https://x.com/destraynor/status/2105654398848279002" target="_blank" rel="noopener noreferrer">Des Traynor</a>,
+          under a thread about removing the vibe-coded look
+        </span>
+      </blockquote>
+      <p class="origin-text">
+        The stack came from <a href="https://x.com/destraynor/status/2105348727196004805" target="_blank" rel="noopener noreferrer">his original post</a>:
+        sound from Cuelume, animation from Transitions.dev, UI from shadcn. The replies added the icon sets, the animation craft,
+        and the arguments that shaped the rules above. Every resource is credited here.
+      </p>
+      <ul class="credits">
+        <li><a href="https://cuelume-site.pages.dev" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-speaker"></i>Cuelume<span class="via">@dwhitedesign</span></a></li>
+        <li><a href="https://transitions.dev" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-refresh"></i>Transitions.dev<span class="via">@Jakubantalik</span></a></li>
+        <li><a href="https://ui.shadcn.com" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-layout-right"></i>shadcn/ui<span class="via">@shadcn</span></a></li>
+        <li><a href="https://phosphoricons.com" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-grid"></i>Phosphor Icons<span class="via">@_phosphoricons</span></a></li>
+        <li><a href="https://github.com/LeulAria/Aria-Icons" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-grid"></i>Aria Icons<span class="via">@AriaIcons</span></a></li>
+        <li><a href="https://nucleoapp.com" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-grid"></i>Nucleo<span class="via">@nucleoicons</span></a></li>
+        <li><a href="https://beui.dev" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-sparkles"></i>beUI<span class="via">@saurra3h</span></a></li>
+        <li><a href="https://emilkowal.ski/skill" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-bulb"></i>Emil Kowalski skill<span class="via">@emilkowal</span></a></li>
+        <li><a href="https://en.wikipedia.org/Wikipedia:Signs_of_AI_writing" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-text"></i>Signs of AI writing<span class="via">Wikipedia</span></a></li>
+        <li><a href="https://github.com/tomiabe/polish" target="_blank" rel="noopener noreferrer"><i class="hgi-stroke hgi-eye"></i>polish<span class="via">the review loop</span></a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="#top">vibe-free<span class="cursor">_</span></a>
+    <a href="https://tomiabe.github.io/polish/">polish</a>
+    <a href="https://github.com/tomiabe/polish/tree/main/vibe-free">Source</a>
+    <a href="https://x.com/destraynor/status/2105348727196004805" target="_blank" rel="noopener noreferrer">The thread</a>
+    <span class="credit">Built by TomiAbe Studio</span>
+  </div>
+</footer>
+
+<button class="to-top" id="to-top" type="button" aria-label="Back to top">
+  <i class="hgi-stroke hgi-arrow-up-01"></i>
+</button>
+
+<!-- copy sources -->
+<script type="text/plain" id="src-prompt">
+You are a senior product designer-engineer. Build this UI so it reads as deliberate and human, not generated. No purple or blue gradients, no neon glow, no default hero plus three feature cards, no emoji icons, no lorem copy or fake testimonials.
+
+Before writing any code, write one short visual direction paragraph: foundation palette (pull from the logo or identity), one dominant accent, controlled secondaries, texture and personality, and three things this will NOT look like. Follow it on every screen.
+
+Rules:
+
+- Build on shadcn/ui (ui.shadcn.com). One accent color, neutrals carry the rest. One spacing scale, one radius set.
+- One display face for headings and one body face for text, both named. Never more than two typefaces.
+- One icon family (phosphoricons.com or github.com/LeulAria/Aria-Icons). Icons only where they match the use case and content. Never emoji as icons.
+- Motion from transitions.dev or beui.dev: 150 to 250ms, eased, purposeful, only on state change and scroll reveal. Easy scroll. Respect prefers-reduced-motion.
+- Optional sound from cuelume-site.pages.dev, on confirmations only.
+- Real content only: real names, real numbers, real screenshots. Give the page a story, vary the section shapes, do not stack the same card three times.
+- Copy: cut AI writing signs (en.wikipedia.org/Wikipedia:Signs_of_AI_writing), no em or en dashes, no italics for emphasis, no eyebrow labels. Cut 20 percent at the end.
+- Responsive at 375, 768, and 1280, every section including navigation, tables, forms, and footer.
+
+Review in a loop, not at the end: after structure, after visuals, after copy. Then run polish (polish.tomiabe.com) to review code, copy, and screens, and fix what it flags.
+
+Done means: one accent, one icon family, two typefaces, motion with a reason, copy that does not sound generated, and a layout that is not the same page as everything else.
+</script>
+
+<script type="text/plain" id="src-agents">
+# vibe-free
+
+Drop this file into your project as `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`, or paste `PROMPT.md` into a single chat.
+
+Its job: stop AI-built UIs from reading as AI-built.
+
+The negative constraints below are opinionated on purpose. Edit them. The point is that the list exists and is non-negotiable, not that you agree with every item.
+
+---
+
+## 0. Visual direction comes first
+
+Before writing any code, write one short paragraph that answers:
+
+- What is the foundation, and where does the palette come from (logo, brand, identity)?
+- What is the dominant accent, and what are the controlled secondaries?
+- What is the texture and personality (editorial, hand-drawn, technical, loud, quiet)?
+- What three things will this NOT look like?
+
+Read that paragraph back before every screen you build. If a section does not serve it, cut it.
+
+Generic output is the default. Specificity is the only known fix.
+
+## 1. Design contract
+
+Lock these before the first component.
+
+- **Color.** Pull from the existing identity if there is one. Otherwise pick one accent and commit. Neutrals do the heavy lifting. No rainbow gradients, no purple or blue gradient hero, no neon glow.
+- **Type.** One display face for headings, one body face for text. Name both and commit them to CSS variables or the font stack. Never ship default system fonts unexamined. Never more than two families.
+- **Spacing and radius.** One spacing scale (4px or 8px base), one radius set. Every margin comes from the scale.
+- **Icons.** One icon family for the whole build. Icons go in critical areas only (status, action, navigation, empty states), and each icon must match its use case and the content beside it. Never use emoji as UI icons. Never mix families. Open options: Phosphor (phosphoricons.com), Aria Icons (github.com/LeulAria/Aria-Icons).
+- **Component anchor.** Build on shadcn/ui (ui.shadcn.com) or one other system named in your visual direction. Do not hand-roll what a system already gives you.
+
+## 2. Structure and composition
+
+- Do not default to hero plus three feature cards plus a CTA unless the content genuinely demands it. Vibe-coded pages all share one skeleton. Vary the rhythm.
+- Use real content: real names, real numbers, real screenshots. Placeholder testimonials, fake logos, and lorem copy are the loudest tell there is.
+- Give the page a story, an order in which it is meant to be read, instead of a stack of sections.
+- Vary section shape: full-bleed, split, list, quote, dense versus airy.
+
+## 3. Motion
+
+- References: Transitions.dev (transitions.dev) for page and element transitions, beUI (beui.dev) for animated React and Next components, Emil Kowalski's craft notes (emilkowal.ski/skill) for timing and easing.
+- Motion clarifies, it does not decorate. Fast (150 to 250ms), eased, purposeful. Animate on state change and scroll reveal, not on every element.
+- No bouncing everything. No infinite background animation.
+- Smooth, easy scroll. Respect `prefers-reduced-motion`.
+
+## 4. Sound (optional, context dependent)
+
+- Cuelume (cuelume-site.pages.dev) for UI sound effects.
+- Sound earns its place on confirmations and completions only. Routine interactions stay silent. Overused sound reads as gimmicky.
+
+## 5. Copy
+
+- Before you ship, read Wikipedia: Signs of AI writing (en.wikipedia.org/Wikipedia:Signs_of_AI_writing) and cut anything that matches.
+- Cut the tells: seamless, powerful yet simple, unlock, in today's fast-paced world, superlative stacks, throat-clearing intros, feature lists written as slogans.
+- Write like the product team actually talks. Specific beats impressive.
+
+### Negative constraints (edit this list)
+
+- No em dashes or en dashes.
+- Nothing in italics for emphasis.
+- No eyebrow labels above headings.
+- No bold-italic emphasis stacking.
+- Cut 20 percent from the copy at the end. Shorter reads more human.
+
+## 6. Responsive
+
+- Every aspect works at tablet and mobile. Not only the hero: navigation, tables, dense sections, forms, the footer.
+- Check at 375, 768, and 1280 before you call anything done.
+
+## 7. Review loop, not a final gate
+
+- Audit at every step, not once at the end. After structure, after the visual pass, after the copy pass.
+- Run polish (polish.tomiabe.com) against the code, the copy, and the screens, then fix what it flags before shipping.
+
+## Done means
+
+A person with taste would assume another person made deliberate decisions here: one accent, one icon family, two typefaces, motion with a reason, copy that does not sound generated, and a layout that is not the same page as everything else.
+</script>
+
+<script src="app.js"></script>
+</body>
+</html>

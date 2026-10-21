@@ -33,6 +33,7 @@ Options:
   --screenshot <path>  Attach a PNG, JPEG, or WebP screenshot. Repeat up to 3 times.
   --max-files <n>   Cap number of files (default 20)
   --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
+  --per-file              Review one file at a time (reduces token usage)
   --help            Show this help
 
 Config (.polish.json):
@@ -49,7 +50,7 @@ API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ
 }
 
 function parseArgs(argv) {
-  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false, screenshots: [] };
+  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false, screenshots: [], perFile: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") { opts.help = true; continue; }

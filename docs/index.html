@@ -36,6 +36,9 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@primer/css@22.3.0/dist/primer.min.css" />
 <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+<link rel="stylesheet" href="https://unpkg.com/lenis@1.3.26/dist/lenis.css" />
+<script src="https://unpkg.com/lenis@1.3.26/dist/lenis.min.js" defer></script>
+<script src="smooth-scroll.js" defer></script>
 <style>
   /* ============ polish palette (grayscale) ============ */
   :root {
@@ -93,7 +96,7 @@
 
   /* ============ base ============ */
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: auto; }
   body {
     margin: 0;
     font-family: var(--p-font-sans);
@@ -2055,7 +2058,11 @@ export function SettingsForm({ project, onSave }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     toTop.addEventListener("click", function () {
-      window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+      if (!reduceMotion && window.polishLenis) {
+        window.polishLenis.scrollTo(0);
+        return;
+      }
+      window.scrollTo({ top: 0, behavior: "auto" });
     });
   })();
 </script>
