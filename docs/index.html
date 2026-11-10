@@ -36,6 +36,9 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@primer/css@22.3.0/dist/primer.min.css" />
 <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+<link rel="stylesheet" href="assets/lenis/lenis.css" />
+<script defer src="assets/lenis/lenis.min.js"></script>
+<script defer src="assets/smooth-scroll.js"></script>
 <style>
   /* ============ polish palette (grayscale) ============ */
   :root {
@@ -93,7 +96,7 @@
 
   /* ============ base ============ */
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html:not(.lenis) { scroll-behavior: smooth; }
   body {
     margin: 0;
     font-family: var(--p-font-sans);
@@ -119,7 +122,7 @@
   }
   .skip-link:focus { left: 0; }
   @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
+    html:not(.lenis) { scroll-behavior: auto; }
     body, * { transition: none !important; animation: none !important; }
   }
 
