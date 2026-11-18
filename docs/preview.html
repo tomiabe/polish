@@ -112,6 +112,7 @@
   }
   .nav-links a:hover { color: var(--p-fg); background: var(--p-canvas-subtle); text-decoration: none; }
   .nav-links a.active { color: var(--p-fg); background: var(--p-canvas-subtle); }
+  .nav-menu a.active { color: var(--p-fg); font-weight: 600; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
   .theme-switch {
     display: flex; gap: 2px; background: var(--p-canvas-subtle);
@@ -133,6 +134,7 @@
     color: var(--p-fg); border-radius: var(--p-radius-md); min-height: 40px; min-width: 40px;
     align-items: center; justify-content: center; cursor: pointer; font-size: 18px;
   }
+  .nav-burger[aria-expanded="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
   .nav-menu {
     display: none; border-top: 1px solid var(--p-border); background: var(--p-canvas);
     padding: 8px 24px 16px;
@@ -353,6 +355,8 @@
       <a href="index.html#rubric">Rubric</a>
       <a href="index.html#scoring">Scoring</a>
       <a href="index.html#install">Install</a>
+      <a href="index.html#mcp">MCP</a>
+      <a href="index.html#agents">Agents</a>
       <a href="preview.html" class="active">Preview</a>
     </div>
     <div class="nav-right">
@@ -377,6 +381,8 @@
     <a href="index.html#rubric">Rubric</a>
     <a href="index.html#scoring">Scoring</a>
     <a href="index.html#install">Install</a>
+    <a href="index.html#mcp">MCP</a>
+    <a href="index.html#agents">Agents</a>
     <a href="preview.html" class="active">Preview</a>
   </div>
 </nav>
@@ -384,7 +390,7 @@
 <main>
   <div class="wrap">
     <div class="preview-hero">
-      <h1>Ship UI a senior designer would sign off on.</h1>
+      <h1>Preview Polish on a public repo</h1>
       <p class="lede">
         Paste a GitHub repository URL. Polish clones it, reviews up to 5 UI files,
         and returns a score with representative findings.
@@ -495,13 +501,20 @@
 
   // ===== mobile menu =====
   (function () {
-    var burger = document.getElementById("burger-icon");
-    var btn = burger.parentElement;
+    var btn = document.querySelector(".nav-burger");
     var menu = document.getElementById("nav-menu");
+    var burger = document.getElementById("burger-icon");
     btn.addEventListener("click", function () {
       var open = menu.classList.toggle("open");
       btn.setAttribute("aria-expanded", String(open));
-      burger.className = open ? "hgi-stroke hgi-multiply-01" : "hgi-stroke hgi-menu-01";
+      burger.className = open ? "hgi-stroke hgi-cancel-01" : "hgi-stroke hgi-menu-01";
+    });
+    menu.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () {
+        menu.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+        burger.className = "hgi-stroke hgi-menu-01";
+      });
     });
   })();
 
