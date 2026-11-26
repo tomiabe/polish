@@ -49,6 +49,7 @@ polish --context "homepage hero" docs/index.html  # focus a review on one surfac
 polish --verify findings.json           # re-check that previous findings are fixed
 polish --screenshot artifacts/mobile.png src/explore.html src/styles.css
 polish --dry-run                        # preview what would be sent, no API call
+polish --dry-run --max-input-tokens 7000 # estimate and batch to an input budget
 polish --json                           # machine-readable receipt + findings, for CI or agents
 polish init-agent                       # add the Polish workflow to AGENTS.md
 ```
@@ -69,9 +70,20 @@ Create `.polish.json` in a project root. Everything is optional:
   ],
   "rubric": ["usability", "craft", "accessibility"],
   "maxFiles": 20,
-  "maxFileBytes": 100000
+  "maxFileBytes": 100000,
+  "tokenBudgets": {
+    "groq": {
+      "inputTokensPerRequest": 7000,
+      "inputTokensPerMinute": 7000,
+      "outputTokensPerRequest": 900,
+      "outputTokensPerMinute": 1000,
+      "imageTokensPerScreenshot": 2048
+    }
+  }
 }
 ```
+
+The token-budget values above are examples. Provider limits vary by model, account, and service tier; configure them from your provider's current limits. You can also override the input and output request caps with `--max-input-tokens` and `--max-tokens`.
 
 - `provider` - `openai`, `anthropic`, `openrouter`, `groq`, or `gemini`. Auto-detected from the env key that is present.
 - `providers` - ordered fallback list. If set, polish tries each provider in order until one succeeds.
@@ -80,7 +92,10 @@ Create `.polish.json` in a project root. Everything is optional:
 - `include` / `exclude` - glob patterns using `**`, `*`, `?`, and `{a,b}`. `node_modules` and `.git` are always skipped.
 - `visuals` - up to three PNG, JPEG, or WebP screenshots. Add a label and viewport so Polish knows which state it is inspecting. Use a vision-capable model for screenshot reviews.
 - `rubric` - which rubric layers to use. `usability` (core heuristics), `craft` (typography, color, spacing, motion, components, writing), `accessibility` (contrast, keyboard, semantics, forms, touch targets, reduced motion). All three are on by default; pick a subset to cut token cost on large reviews.
-- `maxFiles` / `maxFileBytes` - safety caps so a large file does not blow the token budget. Every run prints its estimated token count.
+- `maxFiles` / `maxFileBytes` - safety caps. Files above `maxFileBytes` are skipped.
+- `tokenBudgets` - optional per-provider request and per-minute input/output limits. Polish estimates the full prompt, groups files into requests, and waits between requests when configured minute limits would be exceeded. A single file that cannot fit is reported before any API request; Polish does not split inside a file.
+- `imageTokensPerScreenshot` - optional image-token estimate used for planning. The default is 2,048 tokens per image; actual image costs vary by model.
+- `maxInputTokens` / `maxTokens` - optional global overrides for the input budget per request and output cap per request.
 - `--context` - optional review scope, such as a page section or changed interaction. Polish still uses the supplied files for surrounding context, but reports only findings relevant to the scope.
 
 ## The rubric and tailoring it
@@ -224,4 +239,4 @@ scripts/             manual test scripts
 
 ## Notes on token cost
 
-polish sends full, line-numbered file contents to the model. The estimated token count is printed before each run. Keep `maxFiles` and `maxFileBytes` tight, and audit the screens you touch in a change rather than whole repositories.
+polish sends full, line-numbered file contents to the model. `--dry-run` estimates the complete text prompt and screenshot budget, then shows the request batches without making an API call. Text estimates use roughly four characters per token; screenshot estimates are configurable. `--context` narrows findings but does not reduce source sent. Keep `maxFiles` and `maxFileBytes` tight, and audit the screens you touch rather than whole repositories.

@@ -47,7 +47,12 @@ const TOOLS = [
         visuals: { ...VISUALS_SCHEMA, description: "Optional rendered screenshots. Attach source files too, so findings can identify the responsible code." },
         context: { type: "string", description: "Limit findings to a named UI surface or change; e.g. homepage hero" },
         provider: { type: "string", enum: PROVIDER_ENUM, description: "Override the LLM provider" },
-        model: { type: "string", description: "Override the LLM model" }
+        model: { type: "string", description: "Override the LLM model" },
+        maxInputTokens: { type: "integer", minimum: 1, description: "Per-request input budget; files are batched to fit" },
+        inputTokensPerMinute: { type: "integer", minimum: 1, description: "Provider input-token rate limit; Polish waits between batches when needed" },
+        maxTokens: { type: "integer", minimum: 1, description: "Maximum output tokens per request" },
+        outputTokensPerMinute: { type: "integer", minimum: 1, description: "Provider output-token rate limit; Polish waits between batches when needed" },
+        imageTokensPerScreenshot: { type: "integer", minimum: 1, description: "Approximate image-token cost used for planning" }
       },
       required: ["files"]
     }
@@ -63,6 +68,11 @@ const TOOLS = [
         files: { ...FILES_SCHEMA, description: "The updated UI files (same paths as the original review)" },
         visuals: { ...VISUALS_SCHEMA, description: "Optional current screenshots for checking visual fixes" },
         context: { type: "string", description: "Optional scope to limit verification, e.g. homepage hero" },
+        maxInputTokens: { type: "integer", minimum: 1 },
+        inputTokensPerMinute: { type: "integer", minimum: 1 },
+        maxTokens: { type: "integer", minimum: 1 },
+        outputTokensPerMinute: { type: "integer", minimum: 1 },
+        imageTokensPerScreenshot: { type: "integer", minimum: 1 },
         issues: {
           type: "array",
           items: { type: "object" },
@@ -113,7 +123,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "polish_usage") {
       return toResult({
         quota: "unlimited",
-        message: "polish is self-hosted - no subscription. Uses your own API key (GROQ_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENROUTER_API_KEY)."
+        message: "polish adds no review quota or subscription. Your model provider may apply usage limits and API charges. Uses your own API key (GROQ_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENROUTER_API_KEY)."
       });
     }
     return toError(`Unknown tool: ${name}`);

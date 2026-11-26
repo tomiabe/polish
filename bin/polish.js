@@ -2,10 +2,10 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { expandGlobs, loadConfig } from "../lib/config.js";
-import { reviewFiles, verifyFiles, resolveRubric } from "../lib/review.js";
-import { buildReviewSystem, buildReviewUser } from "../lib/prompt.js";
+import { planReviewFiles, reviewFiles, verifyFiles, resolveRubric } from "../lib/review.js";
 import { writeAgentInstructions } from "../lib/agent.js";
 import { prepareVisuals } from "../lib/visuals.js";
+import { describePlanError } from "../lib/token-budget.js";
 
 const CYAN = "\x1b[36m";
 const RED = "\x1b[31m";
@@ -33,7 +33,9 @@ Options:
   --screenshot <path>  Attach a PNG, JPEG, or WebP screenshot. Repeat up to 3 times.
   --context <text>  Limit the review to a named surface or change
   --max-files <n>   Cap number of files (default 20)
-  --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
+  --max-file-bytes <n>  Skip files larger than n bytes (default 100000)
+  --max-input-tokens <n>  Set a per-request input budget for planning and batching
+  --max-tokens <n>  Set the model's maximum output tokens per request
   --help            Show this help
 
 Config (.polish.json):
@@ -71,6 +73,8 @@ function parseArgs(argv) {
       opts.context = context;
       continue;
     }
+    if (a === "--max-input-tokens") { opts.maxInputTokens = Number(argv[++i]); continue; }
+    if (a === "--max-tokens") { opts.maxTokens = Number(argv[++i]); continue; }
     if (a === "--max-files") { opts.maxFiles = Number(argv[++i]); continue; }
     if (a === "--max-file-bytes") { opts.maxFileBytes = Number(argv[++i]); continue; }
     if (a.startsWith("-")) throw new Error(`Unknown option: ${a}`);
@@ -81,10 +85,6 @@ function parseArgs(argv) {
     opts.files.shift();
   }
   return opts;
-}
-
-function estimateTokens(text) {
-  return Math.round(text.length / 4);
 }
 
 async function readFiles(cfg, requested) {
@@ -102,6 +102,48 @@ async function readFiles(cfg, requested) {
     if (files.length >= (cfg.maxFiles ?? 20)) break;
   }
   return files;
+}
+
+function toPublicPlan(plan) {
+  return {
+    provider: plan.budget.provider,
+    estimate: {
+      inputTokensAcrossBatches: plan.estimatedInputTokens,
+      inputTokensIfSentAtOnce: plan.estimatedInputTokensAtOnce,
+      imageTokensPerScreenshot: plan.budget.imageTokensPerScreenshot,
+      outputTokensPerRequest: plan.budget.outputTokensPerRequest
+    },
+    budget: {
+      inputTokensPerRequest: plan.budget.inputTokensPerRequest,
+      inputTokensPerMinute: plan.budget.inputTokensPerMinute,
+      outputTokensPerMinute: plan.budget.outputTokensPerMinute
+    },
+    batches: plan.batches.map((batch) => ({
+      files: batch.files.map((file) => file.path),
+      textTokens: batch.textTokens,
+      imageTokens: batch.imageTokens,
+      inputTokens: batch.inputTokens
+    })),
+    oversizedFiles: plan.oversizedFiles
+  };
+}
+
+function printReviewPlan(plan) {
+  const totalImages = plan.batches.reduce((sum, batch) => sum + batch.imageTokens, 0);
+  console.log(`${BOLD}polish${RESET} ${DIM}~${plan.estimatedInputTokens.toLocaleString()} estimated input tokens across ${plan.batches.length} request${plan.batches.length === 1 ? "" : "s"}${RESET}`);
+  console.log(`${DIM}Text tokens are estimated from the full prompt; screenshots use a configurable per-image estimate.${RESET}`);
+  if (plan.budget.provider) console.log(`${DIM}Provider budget: ${plan.budget.provider}${RESET}`);
+  if (plan.budget.inputTokensPerRequest) console.log(`${DIM}Input per request: ${plan.budget.inputTokensPerRequest.toLocaleString()} tokens${RESET}`);
+  if (plan.budget.inputTokensPerMinute) console.log(`${DIM}Input per minute: ${plan.budget.inputTokensPerMinute.toLocaleString()} tokens; batches may pause to stay within it.${RESET}`);
+  if (plan.budget.outputTokensPerRequest) console.log(`${DIM}Output cap per request: ${plan.budget.outputTokensPerRequest.toLocaleString()} tokens${RESET}`);
+  if (plan.budget.outputTokensPerMinute) console.log(`${DIM}Output per minute: ${plan.budget.outputTokensPerMinute.toLocaleString()} tokens; batches may pause to stay within it.${RESET}`);
+  if (totalImages > 0) console.log(`${DIM}Estimated screenshot input across batches: ~${totalImages.toLocaleString()} tokens${RESET}`);
+  for (const [i, batch] of plan.batches.entries()) {
+    const files = batch.files.map((file) => `  ${file.path} (${(file.content.length / 1024).toFixed(1)} KB)`).join("\n");
+    console.log(`\n${BOLD}Request ${i + 1}/${plan.batches.length}${RESET} ${DIM}~${batch.inputTokens.toLocaleString()} input tokens${RESET}\n${files}`);
+  }
+  const error = describePlanError(plan);
+  if (error) console.error(`\n${RED}${error}${RESET}`);
 }
 
 function printScore(score, summary) {
@@ -139,13 +181,21 @@ async function runReview(cfg, opts, rubric) {
     process.exit(1);
   }
 
-  const system = buildReviewSystem(rubric);
   const visuals = await prepareVisuals(cfg.visuals, process.cwd());
-  const user = buildReviewUser(files, visuals, cfg.context ?? "");
-  const tokens = estimateTokens(system) + estimateTokens(user);
-  const list = files.map((f) => `  ${f.path} (${(f.content.length / 1024).toFixed(1)} KB)`).join("\n");
+  const plan = planReviewFiles(cfg, files, visuals, rubric);
+
+  if (opts.json && opts.dryRun) {
+    console.log(JSON.stringify({ dryRun: true, plan: toPublicPlan(plan) }, null, 2));
+    if (plan.oversizedFiles.length > 0) process.exitCode = 1;
+    return;
+  }
 
   if (opts.json) {
+    const planError = describePlanError(plan);
+    if (planError) throw new Error(planError);
+    cfg.onRateLimitWait = async ({ waitMs, batchNumber, batchCount }) => {
+      console.error(`Provider token budget: waiting ~${Math.ceil(waitMs / 1000)}s before request ${batchNumber}/${batchCount}.`);
+    };
     const result = await reviewFiles(cfg, files);
     console.log(JSON.stringify({
       score: result.score,
@@ -157,14 +207,20 @@ async function runReview(cfg, opts, rubric) {
     return;
   }
 
-  const visualNote = visuals.length > 0 ? ` + ${visuals.length} screenshot${visuals.length === 1 ? "" : "s"}` : "";
-  console.log(`${BOLD}polish${RESET} ${DIM}~${tokens.toLocaleString()} estimated source tokens${visualNote}${RESET}`);
-  console.log(list);
+  printReviewPlan(plan);
 
   if (opts.dryRun) {
     console.log(`\n${DIM}Dry run, prompt built, no API call.${RESET}`);
+    if (plan.oversizedFiles.length > 0) process.exitCode = 1;
     return;
   }
+
+  const planError = describePlanError(plan);
+  if (planError) throw new Error(planError);
+  cfg.onRateLimitWait = async ({ waitMs, batchNumber, batchCount }) => {
+    const message = `Provider token budget: waiting ~${Math.ceil(waitMs / 1000)}s before request ${batchNumber}/${batchCount}.`;
+    console.log(`\n${DIM}${message}${RESET}`);
+  };
 
   const result = await reviewFiles(cfg, files);
 
@@ -228,6 +284,8 @@ async function main() {
     }
     const cfg = await loadConfig(opts.config);
     if (opts.context) cfg.context = opts.context;
+    if (opts.maxInputTokens) cfg.maxInputTokens = opts.maxInputTokens;
+    if (opts.maxTokens) cfg.maxTokens = opts.maxTokens;
     if (opts.maxFiles) cfg.maxFiles = opts.maxFiles;
     if (opts.maxFileBytes) cfg.maxFileBytes = opts.maxFileBytes;
     if (opts.screenshots.length > 0) {
