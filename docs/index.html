@@ -211,9 +211,11 @@
     border: 1px solid var(--p-border); background: var(--p-canvas-subtle); color: var(--p-fg);
     cursor: pointer; text-decoration: none;
   }
-  .p-btn:hover { background: var(--p-border); color: var(--p-fg); text-decoration: none; }
+  @media (hover: hover) {
+    .p-btn:hover { background: var(--p-border); color: var(--p-fg); text-decoration: none; }
+    .p-btn.primary:hover { opacity: 0.88; }
+  }
   .p-btn.primary { background: var(--p-emphasis); color: var(--p-emphasis-fg); border-color: var(--p-emphasis); }
-  .p-btn.primary:hover { opacity: 0.88; }
   .stats { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .stat {
     background: var(--p-canvas-subtle); border: 1px solid var(--p-border);
@@ -803,7 +805,7 @@
         <div class="stat">
           <i class="hgi-stroke hgi-infinity-01"></i>
           <b>No cap</b>
-          <span>reviews per month</span>
+          <span>from Polish; provider limits apply</span>
         </div>
       </div>
     </div>
@@ -1115,7 +1117,7 @@
       <h2>One number: is it ready to merge?</h2>
       <p class="sub">
         Start at 100. Each finding deducts by severity: 22 for critical, 9 for serious, and 3 for moderate.
-        Polish has no severity ceiling. Try the model below.
+        Polish has no severity ceiling. Use the model below to see how scores change. Scores summarize findings; use your project’s release criteria to decide whether a change is ready to merge.
       </p>
       <div class="scoring">
         <div class="panel">
@@ -1268,7 +1270,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. Running <span class="mono">polish --dry-run docs/index.html</span> estimates about 29,000 tokens, under a cent on most models.
+        polish audits this page too. <span class="mono">polish --dry-run docs/index.html</span> estimates about 29,000 tokens; large reviews may exceed your provider’s rate or context limits.
       </p>
     </div>
   </section>
@@ -1294,9 +1296,11 @@ polish --dry-run                        <span class="c"># preview cost, no API c
         <div class="mcp-card">
           <div class="icon"><i class="hgi-stroke hgi-infinity-01"></i></div>
           <h3>polish_usage</h3>
-          <p>Usage status: always unlimited. Self-hosted means no quota and no subscription, just your own key.</p>
+          <p>No cap or subscription from Polish. Your model provider’s usage limits and API costs still apply.</p>
         </div>
-      </div>    </div>
+      </div>
+      <p class="sub">To connect Polish to your agent, follow the <a href="https://github.com/tomiabe/polish#mcp-server">MCP setup guide</a> for your client.</p>
+    </div>
   </section>
 
   <section id="agents">

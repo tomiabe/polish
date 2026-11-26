@@ -167,6 +167,14 @@
   .input-row {
     display: flex; gap: 10px; align-items: stretch;
   }
+  .repo-label {
+    display: block; margin-bottom: 8px; color: var(--p-fg);
+    font-size: 13px; font-weight: 600;
+  }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
   .input-row input {
     flex: 1;
     font-family: var(--p-font-mono); font-size: 14px;
@@ -190,7 +198,7 @@
     margin-top: 12px; font-size: 13px; color: var(--p-fg-muted);
     display: flex; align-items: flex-start; gap: 6px;
   }
-  .privacy-note i { font-size: 15px; flex-shrink: 0; }
+  .privacy-note i { font-size: 15px; line-height: 1; flex-shrink: 0; }
 
   /* loading */
   .loading {
@@ -398,19 +406,21 @@
     </div>
 
     <div class="input-card">
+      <label class="repo-label" for="repo-url">GitHub repository URL</label>
       <div class="input-row">
-        <input type="url" id="repo-url" placeholder="https://github.com/user/repo" aria-label="GitHub repository URL" />
+        <input type="url" id="repo-url" aria-describedby="error-text" placeholder="https://github.com/user/repo" />
         <button type="button" class="run-btn" id="run-btn" onclick="runPreview()">
           <i class="hgi-stroke hgi-play-circle"></i>Review
         </button>
       </div>
       <div class="privacy-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        Public repos only. Repository contents are not stored. Usage analytics records page and button interactions, not review contents.
+        <span>Public repos only. <strong>Repository contents are not stored.</strong> Usage analytics records page and button interactions, not review contents.</span>
       </div>
     </div>
 
-    <div class="error-msg" id="error-msg">
+    <div class="sr-only" id="review-status" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="error-msg" id="error-msg" role="alert" aria-atomic="true">
       <i class="hgi-stroke hgi-alert-circle"></i>
       <span id="error-text"></span>
     </div>
@@ -541,14 +551,18 @@
   function showError(msg) {
     document.getElementById("error-text").textContent = msg;
     document.getElementById("error-msg").classList.add("active");
+    document.getElementById("repo-url").setAttribute("aria-invalid", "true");
+    document.getElementById("repo-url").focus();
   }
 
   function hideError() {
     document.getElementById("error-msg").classList.remove("active");
+    document.getElementById("repo-url").removeAttribute("aria-invalid");
   }
 
   function showLoading() {
     document.getElementById("loading").classList.add("active");
+    document.getElementById("review-status").textContent = "Review started. Cloning repository.";
     document.getElementById("results").classList.remove("active");
     document.getElementById("receipt").classList.remove("active");
     hideError();
@@ -598,6 +612,8 @@
     }
 
     document.getElementById("results").classList.add("active");
+    document.getElementById("review-status").textContent =
+      "Review complete. " + (data.findings ? data.findings.length : 0) + " findings.";
   }
 
   function escapeHtml(s) {
@@ -607,6 +623,7 @@
   }
 
   var loadingTimer = null;
+  var reviewInProgress = false;
   function animateLoading() {
     var i = 0;
     clearInterval(loadingTimer);
@@ -617,6 +634,8 @@
   }
 
   async function runPreview() {
+    if (reviewInProgress) return;
+
     var input = document.getElementById("repo-url");
     var raw = input.value.trim();
     hideError();
@@ -638,6 +657,8 @@
 
     showLoading();
     animateLoading();
+    reviewInProgress = true;
+    input.disabled = true;
     document.getElementById("run-btn").disabled = true;
     if (window.polishAnalytics) {
       window.polishAnalytics.track("polish_review_started", { placement: "preview_form" });
@@ -679,9 +700,14 @@
         window.polishAnalytics.track("polish_review_failed", { placement: "preview_form", status: "network" });
       }
       showError("Could not reach the server. Make sure the preview server is running.");
+    } finally {
+      clearInterval(loadingTimer);
+      hideLoading();
+      reviewInProgress = false;
+      input.disabled = false;
+      document.getElementById("run-btn").disabled = false;
+      if (document.getElementById("error-msg").classList.contains("active")) input.focus();
     }
-
-    document.getElementById("run-btn").disabled = false;
   }
 
   // Enter key triggers review
