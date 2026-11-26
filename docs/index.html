@@ -3,23 +3,46 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>polish: self-hosted UI review for code, copy, and rendered screens</title>
-<meta name="description" content="polish reviews UI code, rendered screens, interface writing, and accessibility with your own LLM API key. Get a weighted 0-100 score, file-level findings, concrete fixes, and agent receipts from a CLI or MCP server." />
-<link rel="canonical" href="https://tomiabe.github.io/polish/" />
+<title>Polish | Evidence-based UI reviews for code and screens</title>
+<meta name="description" content="Review UI code, screenshots, accessibility, and interface writing. Polish is a local CLI and MCP server with evidence-backed findings, targeted fixes, and token-budget planning." />
+<link rel="canonical" href="https://polish.tomiabe.com/" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="polish" />
-<meta property="og:url" content="https://tomiabe.github.io/polish/" />
-<meta property="og:title" content="polish_ - self-hosted UI review for code, copy, and screens" />
-<meta property="og:description" content="Built for designers and engineers reviewing real UI code and rendered screens. Audit usability, craft, accessibility, and writing with your own LLM key and concrete file-level fixes." />
-<meta property="og:image" content="https://tomiabe.github.io/polish/og-dark.png" />
-<meta property="og:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
+<meta property="og:url" content="https://polish.tomiabe.com/" />
+<meta property="og:title" content="Polish | Evidence-based UI reviews for code and screens" />
+<meta property="og:description" content="Review UI code, screenshots, accessibility, and interface writing with your own model key. Get evidence-backed findings, targeted fixes, and token-budget planning." />
+<meta property="og:image" content="https://polish.tomiabe.com/og-dark.png" />
+<meta property="og:image:alt" content="The Polish wordmark on a dark background" />
+<meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="polish_ - self-hosted UI review for code, copy, and screens" />
-<meta name="twitter:description" content="Built for designers and engineers reviewing real UI code and rendered screens. Audit usability, craft, accessibility, and writing with your own LLM key and concrete file-level fixes." />
-<meta name="twitter:image" content="https://tomiabe.github.io/polish/og-dark.png" />
-<meta name="twitter:image:alt" content="polish design review CLI preview with score, findings, and provider support" />
+<meta name="twitter:title" content="Polish | Evidence-based UI reviews for code and screens" />
+<meta name="twitter:description" content="Review UI code, screenshots, accessibility, and interface writing with your own model key. Get evidence-backed findings, targeted fixes, and token-budget planning." />
+<meta name="twitter:image" content="https://polish.tomiabe.com/og-dark.png" />
+<meta name="twitter:image:alt" content="The Polish wordmark on a dark background" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Polish",
+  "url": "https://polish.tomiabe.com/",
+  "description": "A local CLI and MCP server for evidence-based UI reviews of source code, screenshots, accessibility, and interface writing.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cross-platform with Node.js 18 or later",
+  "softwareRequirements": "Node.js 18 or later",
+  "codeRepository": "https://github.com/tomiabe/polish",
+  "license": "https://github.com/tomiabe/polish/blob/main/LICENSE",
+  "featureList": [
+    "Evidence-backed UI findings with targeted fixes",
+    "Usability, design craft, interface writing, and accessibility reviews",
+    "Optional screenshot review",
+    "CLI and MCP server interfaces",
+    "Provider fallback and token-budget planning",
+    "Verification of previously reported findings"
+  ]
+}
+</script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-R0VKNWVNLQ"></script>
 <script>
@@ -779,7 +802,7 @@
       <h1>Catch UI issues before they ship.</h1>
       <p class="lede">
         <span class="wordmark">polish_</span> reviews UI code and rendered screens for usability, design craft, accessibility, and writing.
-        Run it locally with your own LLM key through the CLI or MCP.
+        Run it locally through the CLI or MCP with your own model key. Provider usage limits and API costs apply.
       </p>
       <div class="cta">
         <a class="p-btn primary" href="#install" data-analytics-event="polish_install_click" data-analytics-placement="hero"><i class="hgi-stroke hgi-console"></i>Get started</a>
@@ -895,7 +918,7 @@
       <p class="verify-note">
         <i class="hgi-stroke hgi-shield-01"></i>
         Then <code>polish --verify findings.json</code> re-checks each finding against the updated code,
-        at a fraction of the cost of a full re-review. Live verdicts vary between models and runs,
+        using the current source and previously reported findings. Provider charges depend on the model and request size. Live verdicts vary between models and runs,
         so treat any single score as a signal, not a grade.
       </p>
 
@@ -1076,9 +1099,8 @@
     <div class="wrap">
       <h2>The rubric is data. Swap it.</h2>
       <p class="sub">
-        Three layers cover what senior designers check in code. Source comes first, with optional screenshots when visual proof matters.
-        Every rule is written so a model can verify it against source and rendered evidence, and the whole thing is plain data,
-        so you can replace it with your own design philosophy.
+        Three layers cover usability, design craft, and accessibility. Reviews use an evidence-first method: findings must connect to supplied source or screenshots, respect the product's design context, and offer a targeted fix.
+        The rubric is plain data, so you can replace it with your own design philosophy.
       </p>
       <div class="layers">
         <div class="layer">
@@ -1187,7 +1209,7 @@
       <p class="sub">
         Works with Groq, OpenAI, Anthropic, Gemini, OpenRouter, or any OpenAI-compatible endpoint.
         Use one provider per run or set a fallback chain. Polish reviews app UI source, rendered screenshots, and the words users see.
-        It is not a general code quality or backend linter.
+        Source files and screenshots are sent to the selected provider; its usage limits and charges apply. Polish is not a general code quality or backend linter.
       </p>
       <div class="provider-grid" role="list" aria-label="Supported providers">
         <div class="provider-pill" role="listitem" style="--provider-mark-bg:#f55036; --provider-mark-border:#f55036;">
@@ -1246,9 +1268,10 @@ polish --verify findings.json           <span class="c"># re-check that fixes la
 polish --screenshot artifacts/mobile.png src/explore.html src/styles.css
 polish --json                           <span class="c"># machine-readable receipt, for CI or agents</span>
 polish init-agent                       <span class="c"># write the agent review loop</span>
-polish --dry-run                        <span class="c"># preview cost, no API call</span></pre>
+polish --dry-run                        <span class="c"># estimate prompt and request batches</span>
+polish --dry-run --max-input-tokens 7000</pre>
           </div>
-          <p>Exits with code 1 when critical findings exist. Wire it into pre-commit or CI.</p>
+          <p>Dry-run shows estimated prompt size and batches without an API call. Configure provider budgets to plan for model and rate limits.</p>
         </div>
         <div class="step">
           <div class="step-head">
@@ -1270,7 +1293,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       </div>
       <p class="audit-note">
         <i class="hgi-stroke hgi-shield-01"></i>
-        polish audits this page too. <span class="mono">polish --dry-run docs/index.html</span> estimates about 29,000 tokens; large reviews may exceed your provider’s rate or context limits.
+        Use <span class="mono">polish --dry-run docs/index.html</span> for a current prompt estimate and request plan. Configure provider budgets to account for model context and rate limits.
       </p>
     </div>
   </section>
@@ -1280,7 +1303,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
       <h2>Same engine, one more door: MCP</h2>
       <p class="sub">
         Polish also runs as an MCP server over stdio. Coding agents call the same engine as the CLI,
-        with identical rubric, source evidence, optional screenshots, scoring, findings, and machine-readable receipts.
+        with identical rubric, source evidence, optional screenshots, scoring, findings, and machine-readable receipts. Provider rate limits and API costs still apply.
       </p>
       <div class="mcp-grid">
         <div class="mcp-card">
@@ -1319,7 +1342,7 @@ polish --dry-run                        <span class="c"># preview cost, no API c
         <div class="layer">
           <div class="icon"><i class="hgi-stroke hgi-sparkles"></i></div>
           <h3>Machine-readable receipts</h3>
-          <p>Every run emits a receipt with a run ID, score, files and screenshots reviewed, and category breakdown. <code>--json</code> outputs the full receipt for CI pipelines and agent loops.</p>
+          <p>Every run emits a receipt with a run ID, score, files and screenshots reviewed, category breakdown, estimated input tokens, and request batch count. <code>--json</code> outputs the full receipt for CI pipelines and agent loops.</p>
         </div>
         <div class="layer">
           <div class="icon"><i class="hgi-stroke hgi-checkmark-circle-01"></i></div>

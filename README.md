@@ -1,25 +1,27 @@
 # polish
 
-`polish` is a self-hosted review CLI and MCP server for UI code and rendered screens. It scores usability, design craft, accessibility, and interface writing from 0-100, with file-level findings and concrete fixes. Run it locally, wire in your own API keys, and keep the review loop inside your workflow.
+`polish` is a local CLI and MCP server for evidence-based UI reviews. It evaluates usability, design craft, accessibility, interface writing, and rendered screenshots, then returns a weighted score, file-level findings, and targeted fixes. Bring your own model API key; source files and screenshots are sent to the selected model provider for review, so that provider's pricing and limits apply.
 
 Built for designers and engineers reviewing real UI code.
 
-See it live: https://tomiabe.github.io/polish/
+Website: https://polish.tomiabe.com/
 
 ## Why
 
-Hosted design review tools are useful, but they run on quotas and monthly limits. polish keeps the review loop local, using your own API key and a small Node CLI. Point it at your UI files, it sends them to an LLM with a rubric, and returns a score plus findings with severity, category, file:line, and a concrete fix.
+Run reviews from your terminal or connect the MCP server to an AI agent. Polish sends the selected UI source and optional screenshots to your chosen model provider with a structured review method. Findings include severity, category, file and line, evidence, and a concrete fix. Polish itself adds no subscription or review quota; your provider may charge for usage and enforce rate or context limits.
 
 ## Features
 
 - Reviews against a layered rubric: usability heuristics, design craft, interface writing, and accessibility. The craft layer includes rendered visual QA when screenshots are supplied. It checks headings, descriptions, labels, and helper text alongside visual and interaction code. The rubric is plain data, so it can be swapped for any design philosophy.
 - Optional rendered screenshots give the review real evidence for alignment, responsive states, media crop, duplicate controls, and visual-system drift. Source files remain part of the review so every finding can point to code.
+- The [website preview](https://polish.tomiabe.com/preview.html) runs a limited review of up to five UI files from a public GitHub repository; the full review workflow runs locally through the CLI or MCP server.
 - Polish weighted scoring. Critical findings deduct 22, serious findings deduct 9, and moderate findings deduct 3. There is no severity ceiling.
 - Provider support for Groq, OpenAI, Anthropic, Gemini, and OpenRouter, plus any OpenAI-compatible endpoint through `baseUrl`.
 - Optional provider fallback chains, so you can try multiple APIs in order.
+- Token-budget planning estimates the complete prompt, batches files at file boundaries, and can wait between requests when configured per-minute limits would be exceeded. `--dry-run` shows the estimate and batch plan without calling a model.
 - One engine drives both a CLI and an MCP server, so terminal users and AI agents get identical results.
 - `polish init-agent` writes a safe, repo-local `AGENTS.md` that teaches coding agents when to review UI changes, how to recognize a receipt, and how to verify fixes.
-- Verify mode re-checks previous findings against updated files at a fraction of the cost of a full review and returns a new remaining-issues score.
+- Verify mode re-checks previous findings against updated files and returns their status plus a score based on unresolved findings. Cost depends on the model and request size.
 - Exits with code 1 when critical findings exist, so it works as a pre-commit or CI gate.
 
 ## Install
@@ -100,7 +102,7 @@ The token-budget values above are examples. Provider limits vary by model, accou
 
 ## The rubric and tailoring it
 
-Polish also uses an evidence-first review method adapted from the [UI Skills project](https://github.com/ibelick/ui-skills), including its `improve-ui` and `fixing-accessibility` workflows. Findings must be grounded in the supplied code or rendered evidence, account for the product's own design context, and include a targeted correction. Accessibility findings are triaged from names, keyboard and focus behavior through forms, announcements, contrast, and motion. Opinionated visual preferences are not treated as universal requirements.
+Polish uses an evidence-first review method alongside its configurable rubric. Findings must be supported by the supplied code or rendered evidence, account for the product's own design context, and include a targeted correction. Accessibility checks prioritize names, keyboard and focus behavior, semantics, forms, announcements, contrast, and motion. Visual preferences are not treated as universal requirements.
 
 The default rubric is three layers:
 
@@ -153,7 +155,7 @@ The guidance is informed by [Wikipedia's signs of AI writing](https://en.wikiped
 - Start at 100. Each finding deducts according to Polish weights: critical -22, serious -9, moderate -3.
 - The score never drops below 0.
 
-Every review run also emits a receipt with `polishApplied: true`, a run id, the score, and the files reviewed. In human mode, `polish` prints that receipt before the score. In `--json` mode, agents can read the same receipt without parsing the plain-text output.
+Every review run also emits a receipt with `polishApplied: true`, a run id, the score, the files reviewed, the batch count, and an estimated input-token total. In human mode, `polish` prints that receipt before the score. In `--json` mode, agents can read the same receipt without parsing the plain-text output.
 
 ## Verify mode
 
@@ -173,7 +175,7 @@ polish also runs as an MCP server over stdio, so AI agents can call it as tools.
 
 - `polish_review_files` - review UI files by content, returns a score, receipt, and findings
 - `polish_verify_fixes` - re-check findings against updated content, returning a new score, receipt, and statuses
-- `polish_usage` - usage status, always unlimited and self-hosted
+- `polish_usage` - explains that Polish adds no subscription or review quota; model-provider limits and charges may apply
 
 Register it in any MCP-capable client. For opencode, in `~/.config/opencode/opencode.json`:
 
@@ -230,6 +232,8 @@ lib/llm.js           LLM provider callers and JSON extraction
 lib/prompt.js        review and verify prompt builders
 lib/review.js        shared review and verify engine, used by CLI and MCP
 lib/visuals.js       screenshot validation and provider-ready visual evidence
+lib/token-budget.js  prompt estimates, file batching, and configured rate-limit waits
+lib/methodologies/   evidence-first review guidance
 lib/agent.js         repo-local instructions for coding agents
 lib/scoring.js       weighted scoring and summaries
 demo/                before/after demo components (ProfileCard, SettingsForm)
@@ -239,4 +243,4 @@ scripts/             manual test scripts
 
 ## Notes on token cost
 
-polish sends full, line-numbered file contents to the model. `--dry-run` estimates the complete text prompt and screenshot budget, then shows the request batches without making an API call. Text estimates use roughly four characters per token; screenshot estimates are configurable. `--context` narrows findings but does not reduce source sent. Keep `maxFiles` and `maxFileBytes` tight, and audit the screens you touch rather than whole repositories.
+Polish sends full, line-numbered file contents and any supplied screenshots to the selected provider. `--dry-run` estimates the complete text prompt and screenshot budget, then shows the request batches without making an API call. Text estimates use roughly four characters per token; screenshot estimates are configurable. Limits are estimates, not provider guarantees. Configure per-provider request and per-minute budgets from your provider's current model and account limits. A file that cannot fit the configured input budget is reported before a request; files are not split internally. `--context` narrows findings but does not reduce source sent. Keep `maxFiles` and `maxFileBytes` tight, and review the screens you touch rather than whole repositories.
