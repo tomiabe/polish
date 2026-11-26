@@ -45,6 +45,7 @@ export OPENROUTER_API_KEY=...
 ```bash
 polish                                   # audit files matched by config globs
 polish src/components src/pages/*.tsx    # audit specific files or directories
+polish --context "homepage hero" docs/index.html  # focus a review on one surface
 polish --verify findings.json           # re-check that previous findings are fixed
 polish --screenshot artifacts/mobile.png src/explore.html src/styles.css
 polish --dry-run                        # preview what would be sent, no API call
@@ -80,8 +81,11 @@ Create `.polish.json` in a project root. Everything is optional:
 - `visuals` - up to three PNG, JPEG, or WebP screenshots. Add a label and viewport so Polish knows which state it is inspecting. Use a vision-capable model for screenshot reviews.
 - `rubric` - which rubric layers to use. `usability` (core heuristics), `craft` (typography, color, spacing, motion, components, writing), `accessibility` (contrast, keyboard, semantics, forms, touch targets, reduced motion). All three are on by default; pick a subset to cut token cost on large reviews.
 - `maxFiles` / `maxFileBytes` - safety caps so a large file does not blow the token budget. Every run prints its estimated token count.
+- `--context` - optional review scope, such as a page section or changed interaction. Polish still uses the supplied files for surrounding context, but reports only findings relevant to the scope.
 
 ## The rubric and tailoring it
+
+Polish also uses an evidence-first review method adapted from the [UI Skills project](https://github.com/ibelick/ui-skills), including its `improve-ui` and `fixing-accessibility` workflows. Findings must be grounded in the supplied code or rendered evidence, account for the product's own design context, and include a targeted correction. Accessibility findings are triaged from names, keyboard and focus behavior through forms, announcements, contrast, and motion. Opinionated visual preferences are not treated as universal requirements.
 
 The default rubric is three layers:
 

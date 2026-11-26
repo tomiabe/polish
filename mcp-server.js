@@ -45,7 +45,7 @@ const TOOLS = [
       properties: {
         files: { ...FILES_SCHEMA, description: "UI files to review (up to 20)" },
         visuals: { ...VISUALS_SCHEMA, description: "Optional rendered screenshots. Attach source files too, so findings can identify the responsible code." },
-        context: { type: "string", description: "Short label for this review, e.g. feature or branch name" },
+        context: { type: "string", description: "Limit findings to a named UI surface or change; e.g. homepage hero" },
         provider: { type: "string", enum: PROVIDER_ENUM, description: "Override the LLM provider" },
         model: { type: "string", description: "Override the LLM model" }
       },
@@ -62,6 +62,7 @@ const TOOLS = [
       properties: {
         files: { ...FILES_SCHEMA, description: "The updated UI files (same paths as the original review)" },
         visuals: { ...VISUALS_SCHEMA, description: "Optional current screenshots for checking visual fixes" },
+        context: { type: "string", description: "Optional scope to limit verification, e.g. homepage hero" },
         issues: {
           type: "array",
           items: { type: "object" },

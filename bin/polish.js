@@ -31,6 +31,7 @@ Options:
   --json            Output machine-readable receipt JSON for review or verify
   --force           Allow init-agent to replace an existing AGENTS.md
   --screenshot <path>  Attach a PNG, JPEG, or WebP screenshot. Repeat up to 3 times.
+  --context <text>  Limit the review to a named surface or change
   --max-files <n>   Cap number of files (default 20)
   --max-file-bytes <n>  Truncate files larger than n bytes (default 100000)
   --help            Show this help
@@ -49,7 +50,7 @@ API keys via env: OPENAI_API_KEY | ANTHROPIC_API_KEY | OPENROUTER_API_KEY | GROQ
 }
 
 function parseArgs(argv) {
-  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false, screenshots: [] };
+  const opts = { files: [], config: null, json: false, dryRun: false, verify: null, initAgent: false, force: false, screenshots: [], context: "" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") { opts.help = true; continue; }
@@ -62,6 +63,12 @@ function parseArgs(argv) {
       const screenshot = argv[++i];
       if (!screenshot) throw new Error("--screenshot needs an image path.");
       opts.screenshots.push(screenshot);
+      continue;
+    }
+    if (a === "--context") {
+      const context = argv[++i];
+      if (!context) throw new Error("--context needs a scope description.");
+      opts.context = context;
       continue;
     }
     if (a === "--max-files") { opts.maxFiles = Number(argv[++i]); continue; }
@@ -134,7 +141,7 @@ async function runReview(cfg, opts, rubric) {
 
   const system = buildReviewSystem(rubric);
   const visuals = await prepareVisuals(cfg.visuals, process.cwd());
-  const user = buildReviewUser(files, visuals);
+  const user = buildReviewUser(files, visuals, cfg.context ?? "");
   const tokens = estimateTokens(system) + estimateTokens(user);
   const list = files.map((f) => `  ${f.path} (${(f.content.length / 1024).toFixed(1)} KB)`).join("\n");
 
@@ -220,6 +227,7 @@ async function main() {
       return;
     }
     const cfg = await loadConfig(opts.config);
+    if (opts.context) cfg.context = opts.context;
     if (opts.maxFiles) cfg.maxFiles = opts.maxFiles;
     if (opts.maxFileBytes) cfg.maxFileBytes = opts.maxFileBytes;
     if (opts.screenshots.length > 0) {
