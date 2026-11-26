@@ -129,21 +129,18 @@
   .nav-links a.active { color: var(--p-fg); background: var(--p-canvas-subtle); }
   .nav-menu a.active { color: var(--p-fg); font-weight: 600; }
   .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-  .theme-switch {
-    display: flex; gap: 2px; background: var(--p-canvas-subtle);
-    border: 1px solid var(--p-border); border-radius: var(--p-radius-md); padding: 3px;
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; min-width: 40px; height: 40px; padding: 0;
+    border: 1px solid var(--p-border); border-radius: var(--p-radius-md);
+    background: var(--p-canvas-subtle); color: var(--p-fg);
+    cursor: pointer; font-size: 18px;
   }
-  .theme-switch button {
-    display: flex; align-items: center; gap: 6px;
-    border: 0; background: transparent; color: var(--p-fg-muted);
-    font-family: var(--p-font-sans); font-size: 13px; font-weight: 500;
-    padding: 7px 10px; border-radius: var(--p-radius-sm); cursor: pointer;
-    min-height: 36px;
-  }
-  .theme-switch button:hover { color: var(--p-fg); }
-  .theme-switch button[aria-pressed="true"] { background: var(--p-emphasis); color: var(--p-emphasis-fg); }
-  .theme-switch i { font-size: 16px; }
-  .theme-switch .t-label { display: inline; }
+  .theme-toggle:hover { background: var(--p-border); }
+  .theme-toggle .theme-icon { font-size: 18px; }
+  .theme-toggle .theme-icon-sun { display: none; }
+  [data-color-mode="dark"] .theme-toggle .theme-icon-sun { display: inline-block; }
+  [data-color-mode="dark"] .theme-toggle .theme-icon-moon { display: none; }
   .nav-burger {
     display: none; border: 1px solid var(--p-border); background: var(--p-canvas-subtle);
     color: var(--p-fg); border-radius: var(--p-radius-md); min-height: 40px; min-width: 40px;
@@ -341,7 +338,6 @@
   @media (max-width: 920px) {
     .nav-links { display: none; }
     .nav-burger { display: inline-flex; }
-    .theme-switch .t-label { display: none; }
   }
   @media (max-width: 600px) {
     .input-row { flex-direction: column; }
@@ -383,17 +379,10 @@
       <a href="preview.html" class="active">Preview</a>
     </div>
     <div class="nav-right">
-      <div class="theme-switch" role="group" aria-label="Color theme">
-        <button type="button" data-theme="light" aria-pressed="false" title="Morning (light)">
-          <i class="hgi-stroke hgi-sun-01"></i><span class="t-label">Morning</span>
-        </button>
-        <button type="button" data-theme="dark" aria-pressed="false" title="Noon (dark)">
-          <i class="hgi-stroke hgi-moon-01"></i><span class="t-label">Noon</span>
-        </button>
-        <button type="button" data-theme="system" aria-pressed="false" title="Match your system">
-          <i class="hgi-stroke hgi-sliders-horizontal"></i><span class="t-label">System</span>
-        </button>
-      </div>
+      <button class="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="false" title="Switch to dark theme">
+        <i class="hgi-stroke hgi-moon-01 theme-icon theme-icon-moon" aria-hidden="true"></i>
+        <i class="hgi-stroke hgi-sun-01 theme-icon theme-icon-sun" aria-hidden="true"></i>
+      </button>
       <button class="nav-burger" type="button" aria-expanded="false" aria-controls="nav-menu" aria-label="Menu">
         <i class="hgi-stroke hgi-menu-01" id="burger-icon"></i>
       </button>
@@ -505,23 +494,25 @@
       var resolved = choice === "system" ? (media.matches ? "dark" : "light") : choice;
       root.setAttribute("data-color-mode", resolved);
     }
-    function syncButtons() {
-      document.querySelectorAll(".theme-switch button").forEach(function (b) {
-        b.setAttribute("aria-pressed", String(b.dataset.theme === choice));
-      });
+    var toggle = document.querySelector(".theme-toggle");
+    function syncToggle() {
+      var isDark = root.getAttribute("data-color-mode") === "dark";
+      toggle.setAttribute("aria-pressed", String(isDark));
+      toggle.title = isDark ? "Switch to light theme" : "Switch to dark theme";
     }
-    document.querySelectorAll(".theme-switch button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        choice = b.dataset.theme;
-        localStorage.setItem("polish-theme", choice);
-        applyResolved();
-        syncButtons();
-      });
+    toggle.addEventListener("click", function () {
+      choice = root.getAttribute("data-color-mode") === "dark" ? "light" : "dark";
+      localStorage.setItem("polish-theme", choice);
+      applyResolved();
+      syncToggle();
     });
     media.addEventListener("change", function () {
-      if (choice === "system") applyResolved();
+      if (choice === "system") {
+        applyResolved();
+        syncToggle();
+      }
     });
-    syncButtons();
+    syncToggle();
   })();
 
   // ===== mobile menu =====
